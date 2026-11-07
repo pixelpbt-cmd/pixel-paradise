@@ -294,7 +294,7 @@ async function go(v){
 const PASSIN=`<input id="lp" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="6-digit passcode" autocomplete="off" oninput="this.value=this.value.replace(/\\D/g,'')"`;
 function renderLogin(){
   $('login').innerHTML=`<div class="card"><h2 style="font-size:20px;margin-bottom:8px">Shop login</h2>
-  <input id="le" type="text" placeholder="Shop ID" autocomplete="off">
+  <select id="le"><option value="">Select shop</option><option value="pixelparadise">Pixel Paradise</option></select>
   ${PASSIN} onkeydown="if(event.key==='Enter')doLogin()">
   <button class="b" onclick="doLogin()">Login</button><div id="lm" class="muted" style="margin-top:8px"></div>
   <button class="b ghost2" onclick="show('book')">Back to booking</button></div>`;
@@ -318,7 +318,7 @@ async function setRole(){
 }
 async function doLogin(){
   const id=$('le').value.toLowerCase().replace(/[^a-z0-9]/g,''),code=$('lp').value;
-  if(!id||code.length!==6){$('lm').textContent='Enter the Shop ID and the 6 digit passcode.';return}
+  if(!id||code.length!==6){$('lm').textContent='Select the shop and enter the 6 digit passcode.';return}
   const cred={email:id+LOGIN_DOMAIN,password:code};
   const {error}=await sb.auth.signInWithPassword(cred);
   if(error){$('lm').textContent=errMsg(error);return}
