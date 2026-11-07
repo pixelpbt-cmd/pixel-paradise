@@ -40,7 +40,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 .slot{padding:10px 4px;text-align:center;border-radius:10px;border:2px solid var(--neon);background:transparent;color:var(--neon);font:800 13px Nunito;cursor:pointer}
 .slot.sel{background:var(--neon);color:#0d0826;box-shadow:0 0 12px rgba(244,255,26,.6)}
 .slot:disabled{border-color:var(--line);color:var(--muted);opacity:.4;text-decoration:line-through;cursor:not-allowed}
-.hide{display:none}.top{text-align:left;margin-bottom:8px}#shopbtn{background:transparent;color:var(--neon);border:2px solid var(--neon);border-radius:10px;padding:7px 12px;font:800 13px Nunito,sans-serif;cursor:pointer}#nav:empty{display:none}button.b.ghost{background:transparent;color:var(--coral);border:2px solid var(--coral);box-shadow:none}button.b.ghost2{background:transparent;color:var(--neon);border:2px solid var(--neon);box-shadow:none}button.b.big{padding:22px;font-size:18px;margin-top:10px}.paused{border-color:#7aa7ff}a.b.wa{display:block;text-align:center;text-decoration:none;padding:12px;margin-top:8px;border-radius:10px;font:800 15px Nunito;background:var(--neon);color:#0d0826}.bill{margin:6px 0;font-size:16px;color:var(--sun)}td input{margin:0;min-width:64px}
+.hide{display:none}footer{text-align:center;padding:20px 16px 32px}footer img{width:130px;height:auto;border-radius:12px}footer div{margin-top:8px;font:700 13px Nunito,sans-serif;color:var(--muted);letter-spacing:.5px}footer{text-align:center;padding:28px 16px 36px;color:var(--muted);font:700 13px Nunito,sans-serif}footer img{display:block;margin:0 auto 8px;width:110px;height:auto;opacity:.95}.top{text-align:left;margin-bottom:8px}#shopbtn{background:transparent;color:var(--neon);border:2px solid var(--neon);border-radius:10px;padding:7px 12px;font:800 13px Nunito,sans-serif;cursor:pointer}#nav:empty{display:none}button.b.ghost{background:transparent;color:var(--coral);border:2px solid var(--coral);box-shadow:none}button.b.ghost2{background:transparent;color:var(--neon);border:2px solid var(--neon);box-shadow:none}button.b.big{padding:22px;font-size:18px;margin-top:10px}.paused{border-color:#7aa7ff}a.b.wa{display:block;text-align:center;text-decoration:none;padding:12px;margin-top:8px;border-radius:10px;font:800 15px Nunito;background:var(--neon);color:#0d0826}.bill{margin:6px 0;font-size:16px;color:var(--sun)}td input{margin:0;min-width:64px}
 .note{background:var(--panel);border:2px dashed var(--line);border-radius:12px;padding:10px;margin:10px 0;font-size:13px;color:var(--muted)}
 :focus-visible{outline:3px solid var(--sun);outline-offset:2px}
 </style>
@@ -57,6 +57,8 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 <section id="book" class="hide"></section>
 <section id="login" class="hide"></section>
 </main>
+<footer><img src="mtech.jpg" alt="M Technology"><div>Created by FatahX</div></footer>
+<footer><img src="m-logo.png" alt="M Technology"><div>Created by Fatah Webwork</div></footer>
 <script>
 const WA='919629668242';
 const LOGIN_DOMAIN='@pixelparadise.app'; // hidden, do not change after creating users
@@ -214,7 +216,7 @@ async function renderOwner(){
     ${d.slice().reverse().map(s=>`<tr><td>${s.station}${isCon(s.type)?' · '+s.type:''}</td><td>${esc(s.name)}${s.status==='cancelled'?' <span class="muted">(cancelled)</span>':''}${s.ext&&s.ext.length?' <span class="muted">(extended '+s.ext.length+'x)</span>':''}</td><td>${hm(stT(s))}</td><td>${hm(s.ended_at||s.end_at)}</td><td>${money(s.amount)}</td><td>${s.pay_mode}</td></tr>`).join('')||'<tr><td colspan="6" class="muted">No sessions on this date.</td></tr>'}</table></div></div>
     <div class="card" style="margin-bottom:12px"><h3>Customer history</h3><input placeholder="Search customer name" value="${esc(q)}" oninput="q=this.value;renderHist()"><div class="wrap" id="hist"></div></div>
     <div class="card"><h3>Online bookings</h3><div class="wrap"><table><tr><th>Date</th><th>Time</th><th>Game</th><th>Customer</th><th>Status</th></tr>
-    ${bookings.map(b=>`<tr><td>${b.date}</td><td>${b.slot}:00</td><td>${b.type}${isCon(b.type)&&b.players&&b.players!=='single'?' ('+MODES[b.players]+')':''}</td><td>${esc(b.name)}<br><span class="muted">${esc(b.phone)}</span></td><td>${b.status}<br>${b.status==='pending'?`<button class="slot" onclick="setStatus(${b.id},'confirmed')">Confirm</button> `:''}${b.status!=='cancelled'?`<button class="slot" onclick="setStatus(${b.id},'cancelled')">Cancel</button>`:''}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">No bookings yet.</td></tr>'}</table></div></div>`;
+    ${bookings.map(b=>`<tr><td>${b.date}</td><td>${b.slot}:00</td><td>${b.type}${isCon(b.type)&&b.players&&b.players!=='single'?' ('+MODES[b.players]+')':''}</td><td>${esc(b.name)}<br><span class="muted">${esc(b.phone)}</span></td><td>${b.status}<br>${b.status==='pending'?`<button class="slot" onclick="setStatus(${b.id},'confirmed')">Confirm</button> `:''}${b.status!=='cancelled'?`<button class="slot" onclick="setStatus(${b.id},'cancelled')">Cancel</button>`:''}${b.status!=='pending'?waBtn(b):''}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">No bookings yet.</td></tr>'}</table></div></div>`;
   renderHist();
 }
 function renderHist(){
@@ -228,6 +230,14 @@ async function savePrice(k,t,v){
   if(error)alert('Could not save price: '+error.message);
 }
 async function setStatus(id,st){await sb.from('bookings').update({status:st}).eq('id',id);renderOwner()}
+
+const waNum=p=>{let d=String(p).replace(/\D/g,'');if(d.length===10)d='91'+d;if(d.length===11&&d[0]==='0')d='91'+d.slice(1);return d};
+function waBtn(b){
+  const sl=(b.slot>12?b.slot-12:b.slot)+(b.slot>=12?' PM':' AM');
+  const game=b.type+(isCon(b.type)&&b.players&&b.players!=='single'?' ('+MODES[b.players]+')':'');
+  const msg=b.status==='confirmed'?`Hello ${b.name}, your Pixel Paradise booking is confirmed.\nGame: ${game}\nDate: ${b.date}\nTime: ${sl}\nSee you at the shop!`:`Hello ${b.name}, sorry, we could not confirm your Pixel Paradise booking for ${b.date} at ${sl}. Please book another slot.`;
+  return ` <a class="slot" style="display:inline-block;text-decoration:none;padding:10px 8px" href="https://wa.me/${waNum(b.phone)}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">💬 Message customer</a>`;
+}
 
 /* ---------- customer booking ---------- */
 let B={type:'PS5',pl:'single',date:today(),slot:null},TK=[];
@@ -249,7 +259,16 @@ function drawBook(){
     <label class="muted">Pick a one-hour slot</label>
     <div class="slots">${slots.map(h=>`<button class="slot ${B.slot===h?'sel':''}" ${taken(h)?'disabled':''} onclick="B.slot=${h};drawBook()">${h>12?h-12:h}${h>=12?' PM':' AM'}</button>`).join('')}</div>
     <input id="bn" maxlength="60" placeholder="Your name"><input id="bp" maxlength="20" type="tel" placeholder="Phone number">
-    <button class="b" onclick="confirmB()">Confirm booking</button><div id="bm" class="muted" style="margin-top:8px"></div></div>`;
+    <button class="b" onclick="confirmB()">Confirm booking</button><div id="bm" class="muted" style="margin-top:8px"></div></div>
+    <div class="card" style="margin-top:12px"><h3 style="font-size:15px">Check my booking status</h3><input id="sp" type="tel" maxlength="20" placeholder="Your phone number"><button class="b alt" onclick="checkStatus()">Check status</button><div id="sm" class="muted" style="margin-top:8px"></div></div>`;
+}
+async function checkStatus(){
+  const p=$('sp').value;
+  if(p.replace(/\D/g,'').length<10){$('sm').textContent='Enter your 10 digit phone number.';return}
+  const {data,error}=await sb.rpc('my_bookings',{p});
+  if(error||!data||!data.length){$('sm').textContent='No upcoming booking found for this number.';return}
+  const L={pending:'⏳ Waiting for confirmation',confirmed:'✅ Confirmed',cancelled:'❌ Not available, please book another slot'};
+  $('sm').innerHTML=data.map(b=>{const sl=(b.slot>12?b.slot-12:b.slot)+(b.slot>=12?' PM':' AM');return `<div style="margin-top:6px"><b>${b.date} · ${sl}</b> · ${esc(b.type)}<br>${L[b.status]||b.status}</div>`}).join('');
 }
 async function confirmB(){
   const name=$('bn').value.trim(),phone=$('bp').value.trim();
@@ -260,7 +279,7 @@ async function confirmB(){
   const slot=(B.slot>12?B.slot-12:B.slot)+(B.slot>=12?' PM':' AM');
   const msg=`Hello Pixel Paradise, I want to book:\nName: ${name}\nPhone: ${phone}\nGame: ${B.type}${isCon(B.type)?' ('+MODES[B.pl]+')':''}\nDate: ${B.date}\nTime: ${slot}\nPrice: ${money(P[m][60])} per hour\nPlease confirm.`;
   const url='https://wa.me/'+WA+'?text='+encodeURIComponent(msg);
-  $('bm').innerHTML=`Booking received! Tap below to send it on WhatsApp for confirmation.<a class="b wa" href="${url}" target="_blank" rel="noopener">Send on WhatsApp</a>`;
+  $('bm').innerHTML=`Booking received! Tap below to send it on WhatsApp. The owner will confirm it on WhatsApp, and you can check your status below.<a class="b wa" href="${url}" target="_blank" rel="noopener">Send on WhatsApp</a>`;
   try{window.open(url,'_blank')}catch(e){}
 }
 
