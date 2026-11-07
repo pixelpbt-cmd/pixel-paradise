@@ -59,18 +59,18 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 <script>
 /* ====== PASTE YOUR SUPABASE DETAILS HERE ====== */
 const SUPABASE_URL='https://qintmobzotccczrmqwgh.supabase.co';
-const SUPABASE_KEY='sb_publishable_udJkqGdP_HVsKH-ryuAv_Q_hOO-rx5d';
+const SUPABASE_KEY='PASTE_YOUR_ANON_PUBLIC_KEY';
 const WA='919629668242';
 const PEOPLE=[['talha','Talha (Owner)'],['taha','Taha (Owner)'],['saiyan','Saiyan (Staff)'],['aamir','Aamir (Staff)'],['staff','Staff (Staff)']];
 const LOGIN_DOMAIN='@pixelparadise.app'; // hidden, do not change after creating users
 /* ============================================== */
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const stations=[];
-for(let i=1;i<=5;i++)stations.push({id:'Screen '+i,type:'Screen'});
+for(let i=1;i<=6;i++)stations.push({id:'Screen '+i,type:'Screen'});
 stations.push({id:'Car Simulator',type:'Car Simulator'});
 stations.push({id:'Meta Quest VR',type:'Meta Quest VR'});
-const MODES={single:'1 player',multi2:'2 players',multi4:'3 to 4 players',car:'Car Simulator',vr:'Meta Quest VR'};
-let P={single:{30:70,60:120},multi2:{30:100,60:180},multi4:{30:180,60:340},car:{30:120,60:220},vr:{30:140,60:230}};
+const MODES={single:'1 player',multi2:'2 players',multi3:'3 players',multi4:'4 players',car:'Car Simulator',vr:'Meta Quest VR'};
+let P={single:{30:70,60:120},multi2:{30:100,60:180},multi3:{30:150,60:280},multi4:{30:280,60:360},car:{30:120,60:220},vr:{30:140,60:230}};
 let sessions=[],bookings=[],role=null,OD='';
 const $=id=>document.getElementById(id);
 const today=()=>new Date().toLocaleDateString('en-CA');
@@ -114,7 +114,7 @@ function renderStaff(){
     if(!a)return `<div class="card free"><h3>${st.id}<span class="tag">Free</span></h3>
       <input id="n_${st.id}" placeholder="Customer name">
       ${isPS(st.type)?`<select id="c_${st.id}"><option>PS4</option><option>PS5</option></select>`:''}
-      ${isPS(st.type)?`<select id="p_${st.id}" onchange="calc('${st.id}')"><option value="single">1 player</option><option value="multi2">2 players</option><option value="multi4">3 to 4 players</option></select>`:''}
+      ${isPS(st.type)?`<select id="p_${st.id}" onchange="calc('${st.id}')"><option value="single">1 player</option><option value="multi2">2 players</option><option value="multi3">3 players</option><option value="multi4">4 players</option></select>`:''}
       <select id="d_${st.id}" onchange="calc('${st.id}')"><option value="30">30 min</option><option value="60" selected>1 hour</option><option value="90">1.5 hours</option><option value="120">2 hours</option></select>
       <div class="muted">Amount: <b id="a_${st.id}"></b></div>
       <button class="b" onclick="startS('${st.id}')">Start session</button></div>`;
@@ -217,14 +217,14 @@ async function renderBook(){
   const {data}=await sb.rpc('get_taken_slots',{d:B.date});TK=data||[];drawBook();
 }
 function drawBook(){
-  const cap=grp(B.type)==='PS'?5:1;
+  const cap=grp(B.type)==='PS'?6:1;
   const slots=[];for(let h=10;h<=23;h++)slots.push(h);
   const taken=h=>((TK.find(r=>r.grp===grp(B.type)&&r.slot===h)||{}).n||0)>=cap;
   const m=modeOf(B.type,B.pl);
   $('book').innerHTML=`<div class="card"><h2 style="font-size:20px;margin-bottom:8px">Book your game</h2>
     <label class="muted">Game</label><select onchange="B.type=this.value;B.slot=null;drawBook()">
     ${['PS4','PS5','Car Simulator','Meta Quest VR'].map(t=>`<option ${t===B.type?'selected':''}>${t}</option>`).join('')}</select>
-    ${isCon(B.type)?`<label class="muted">Players</label><select onchange="B.pl=this.value;drawBook()">${['single','multi2','multi4'].map(k=>`<option value="${k}" ${B.pl===k?'selected':''}>${MODES[k]}</option>`).join('')}</select>`:''}
+    ${isCon(B.type)?`<label class="muted">Players</label><select onchange="B.pl=this.value;drawBook()">${['single','multi2','multi3','multi4'].map(k=>`<option value="${k}" ${B.pl===k?'selected':''}>${MODES[k]}</option>`).join('')}</select>`:''}
     <div class="muted">Price: ${money(P[m][30])} for 30 min · ${money(P[m][60])} for 1 hour</div>
     <label class="muted">Date</label><input type="date" min="${today()}" value="${B.date}" onchange="B.date=this.value||today();B.slot=null;renderBook()">
     <label class="muted">Pick a one-hour slot</label>
