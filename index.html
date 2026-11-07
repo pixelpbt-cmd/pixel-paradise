@@ -40,7 +40,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 .slot{padding:10px 4px;text-align:center;border-radius:10px;border:2px solid var(--neon);background:transparent;color:var(--neon);font:800 13px Nunito;cursor:pointer}
 .slot.sel{background:var(--neon);color:#0d0826;box-shadow:0 0 12px rgba(244,255,26,.6)}
 .slot:disabled{border-color:var(--line);color:var(--muted);opacity:.4;text-decoration:line-through;cursor:not-allowed}
-.hide{display:none}#nav:empty{display:none}button.b.ghost{background:transparent;color:var(--coral);border:2px solid var(--coral);box-shadow:none}button.b.ghost2{background:transparent;color:var(--neon);border:2px solid var(--neon);box-shadow:none}button.b.big{padding:22px;font-size:18px;margin-top:10px}.paused{border-color:#7aa7ff}a.b.wa{display:block;text-align:center;text-decoration:none;padding:12px;margin-top:8px;border-radius:10px;font:800 15px Nunito;background:var(--neon);color:#0d0826}.bill{margin:6px 0;font-size:16px;color:var(--sun)}td input{margin:0;min-width:64px}
+.hide{display:none}.top{text-align:left;margin-bottom:8px}#shopbtn{background:transparent;color:var(--neon);border:2px solid var(--neon);border-radius:10px;padding:7px 12px;font:800 13px Nunito,sans-serif;cursor:pointer}#nav:empty{display:none}button.b.ghost{background:transparent;color:var(--coral);border:2px solid var(--coral);box-shadow:none}button.b.ghost2{background:transparent;color:var(--neon);border:2px solid var(--neon);box-shadow:none}button.b.big{padding:22px;font-size:18px;margin-top:10px}.paused{border-color:#7aa7ff}a.b.wa{display:block;text-align:center;text-decoration:none;padding:12px;margin-top:8px;border-radius:10px;font:800 15px Nunito;background:var(--neon);color:#0d0826}.bill{margin:6px 0;font-size:16px;color:var(--sun)}td input{margin:0;min-width:64px}
 .note{background:var(--panel);border:2px dashed var(--line);border-radius:12px;padding:10px;margin:10px 0;font-size:13px;color:var(--muted)}
 :focus-visible{outline:3px solid var(--sun);outline-offset:2px}
 </style>
@@ -48,7 +48,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 <script src="config.js"></script>
 </head>
 <body>
-<header><img alt="Pixel Paradise PlayStation Arena" src="logo.jpg" onclick="logoTap()"></header>
+<header><div class="top"><button id="shopbtn" onclick="show('login')">🔒 Shop login</button></div><img alt="Pixel Paradise PlayStation Arena" src="logo.jpg" onclick="logoTap()"></header>
 <nav id="nav"></nav>
 <main>
 <div id="cfg" class="note hide">Add your Supabase URL and key in config.js.</div>
@@ -285,6 +285,7 @@ function show(v){
   if(v==='owner')renderOwner();
   if(v==='book')renderBook();
   renderNav(v);
+  $('shopbtn').classList.toggle('hide',!!role||v!=='book');
 }
 async function go(v){
   if(role==='owner'&&v!=='owner'){await leaveOwner();if(!role)return}
