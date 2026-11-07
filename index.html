@@ -275,7 +275,7 @@ async function doLogin(){
   const name=$('le').value,code=$('lp').value;
   if(!name||code.length!==6){$('lm').textContent='Select your name and enter your 6 digit passcode.';return}
   const {error}=await sb.auth.signInWithPassword({email:name+LOGIN_DOMAIN,password:code});
-  if(error){$('lm').textContent='Wrong name or passcode.';return}
+  if(error){$('lm').textContent='Error: '+error.message;return}
   if(!await setRole()){$('lm').textContent='This login does not have access.';return}
   await loadPrices();await loadSessions();renderStaff();listen();show('staff');
 }
