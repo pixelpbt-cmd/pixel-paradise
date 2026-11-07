@@ -59,10 +59,10 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 <script>
 /* ====== PASTE YOUR SUPABASE DETAILS HERE ====== */
 const SUPABASE_URL='https://qintmobzotccczrmqwgh.supabase.co';
-const SUPABASE_KEY='eyJhbGciOi...your long key...';
+const SUPABASE_KEY='sb_publishable_udJkqGdP_HVsKH-ryuAv_Q_hOO-rx5d';
 const WA='919629668242';
+const PEOPLE=[['talha','Talha (Owner)'],['taha','Taha (Owner)'],['saiyan','Saiyan (Staff)'],['aamir','Aamir (Staff)'],['staff','Staff (Staff)']];
 const LOGIN_DOMAIN='@pixelparadise.app'; // hidden, do not change after creating users
-const PAD='-px-paradise';          // added behind the scenes to your passcode, do not change after creating users
 /* ============================================== */
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const stations=[];
@@ -262,8 +262,8 @@ function show(v){
 }
 function renderLogin(){
   $('login').innerHTML=`<div class="card"><h2 style="font-size:20px;margin-bottom:8px">Staff / Owner login</h2>
-  <input id="le" type="text" placeholder="Name" autocomplete="off" autocapitalize="none">
-  <input id="lp" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Passcode (4 or 6 digits)" autocomplete="off" oninput="this.value=this.value.replace(/\D/g,'')" onkeydown="if(event.key==='Enter')doLogin()">
+  <select id="le"><option value="">Select your name</option>${PEOPLE.map(p=>`<option value="${p[0]}">${p[1]}</option>`).join('')}</select>
+  <input id="lp" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="6-digit passcode" autocomplete="off" oninput="this.value=this.value.replace(/\D/g,'')" onkeydown="if(event.key==='Enter')doLogin()">
   <button class="b" onclick="doLogin()">Login</button><div id="lm" class="muted" style="margin-top:8px"></div></div>`;
 }
 async function setRole(){
@@ -272,9 +272,9 @@ async function setRole(){
   return role;
 }
 async function doLogin(){
-  const name=$('le').value.trim().toLowerCase().replace(/[^a-z0-9]/g,''),code=$('lp').value;
-  if(!name||(code.length!==4&&code.length!==6)){$('lm').textContent='Enter your name and a 4 or 6 digit passcode.';return}
-  const {error}=await sb.auth.signInWithPassword({email:name+LOGIN_DOMAIN,password:code+PAD});
+  const name=$('le').value,code=$('lp').value;
+  if(!name||code.length!==6){$('lm').textContent='Select your name and enter your 6 digit passcode.';return}
+  const {error}=await sb.auth.signInWithPassword({email:name+LOGIN_DOMAIN,password:code});
   if(error){$('lm').textContent='Wrong name or passcode.';return}
   if(!await setRole()){$('lm').textContent='This login does not have access.';return}
   await loadPrices();await loadSessions();renderStaff();listen();show('staff');
