@@ -40,30 +40,27 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 .slot{padding:10px 4px;text-align:center;border-radius:10px;border:2px solid var(--neon);background:transparent;color:var(--neon);font:800 13px Nunito;cursor:pointer}
 .slot.sel{background:var(--neon);color:#0d0826;box-shadow:0 0 12px rgba(244,255,26,.6)}
 .slot:disabled{border-color:var(--line);color:var(--muted);opacity:.4;text-decoration:line-through;cursor:not-allowed}
-.hide{display:none}.paused{border-color:#7aa7ff}a.b.wa{display:block;text-align:center;text-decoration:none;padding:12px;margin-top:8px;border-radius:10px;font:800 15px Nunito;background:var(--neon);color:#0d0826}.bill{margin:6px 0;font-size:16px;color:var(--sun)}td input{margin:0;min-width:64px}
+.hide{display:none}#nav:empty{display:none}button.b.ghost{background:transparent;color:var(--coral);border:2px solid var(--coral);box-shadow:none}button.b.ghost2{background:transparent;color:var(--neon);border:2px solid var(--neon);box-shadow:none}button.b.big{padding:22px;font-size:18px;margin-top:10px}.paused{border-color:#7aa7ff}a.b.wa{display:block;text-align:center;text-decoration:none;padding:12px;margin-top:8px;border-radius:10px;font:800 15px Nunito;background:var(--neon);color:#0d0826}.bill{margin:6px 0;font-size:16px;color:var(--sun)}td input{margin:0;min-width:64px}
 .note{background:var(--panel);border:2px dashed var(--line);border-radius:12px;padding:10px;margin:10px 0;font-size:13px;color:var(--muted)}
 :focus-visible{outline:3px solid var(--sun);outline-offset:2px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
 </head>
 <body>
-<header><img alt="Pixel Paradise PlayStation Arena" src="logo.jpg"></header>
+<header><img alt="Pixel Paradise PlayStation Arena" src="logo.jpg" onclick="logoTap()"></header>
 <nav id="nav"></nav>
 <main>
-<div id="cfg" class="note hide">Add your Supabase URL and key at the top of the script in index.html.</div>
+<div id="cfg" class="note hide">Add your Supabase URL and key in config.js.</div>
 <section id="staff" class="hide"></section>
 <section id="owner" class="hide"></section>
 <section id="book" class="hide"></section>
 <section id="login" class="hide"></section>
 </main>
 <script>
-/* ====== PASTE YOUR SUPABASE DETAILS HERE ====== */
-const SUPABASE_URL='https://qintmobzotccczrmqwgh.supabase.co';
-const SUPABASE_KEY='sb_publishable_udJkqGdP_HVsKH-ryuAv_Q_hOO-rx5d';
 const WA='919629668242';
-const PEOPLE=[['talha','Talha (Owner)'],['taha','Taha (Owner)'],['saiyan','Saiyan (Staff)'],['aamir','Aamir (Staff)'],['staff','Staff (Staff)']];
 const LOGIN_DOMAIN='@pixelparadise.app'; // hidden, do not change after creating users
-/* ============================================== */
+const OWNERS=[['talha','Talha'],['taha','Taha']];
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const stations=[];
 for(let i=1;i<=6;i++)stations.push({id:'Screen '+i,type:'Screen'});
@@ -71,10 +68,10 @@ stations.push({id:'Car Simulator',type:'Car Simulator'});
 stations.push({id:'Meta Quest VR',type:'Meta Quest VR'});
 const MODES={single:'1 player',multi2:'2 players',multi3:'3 players',multi4:'4 players',car:'Car Simulator',vr:'Meta Quest VR'};
 let P={single:{30:70,60:120},multi2:{30:100,60:180},multi3:{30:150,60:280},multi4:{30:280,60:360},car:{30:120,60:220},vr:{30:140,60:230}};
-let sessions=[],bookings=[],role=null,OD='';
+let sessions=[],bookings=[],role=null,shopCred=null,view='book',q='';
 const $=id=>document.getElementById(id);
 const today=()=>new Date().toLocaleDateString('en-CA');
-OD=today();
+let OD=today();
 const money=n=>'₹'+Math.round(n).toLocaleString('en-IN');
 const fmt=ms=>{const s=Math.max(0,Math.ceil(ms/1000));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),c=s%60;return (h?h+':':'')+String(m).padStart(2,'0')+':'+String(c).padStart(2,'0')};
 const hm=t=>new Date(t).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
@@ -86,6 +83,7 @@ const modeOf=(type,pl)=>type==='Car Simulator'?'car':type==='Meta Quest VR'?'vr'
 const cost=(mode,min)=>Math.floor(min/60)*P[mode][60]+(min%60>=30?P[mode][30]:0);
 const durLabel=m=>m>=60?(m/60)+(m===60?' hour':' hours'):m+' min';
 const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const errMsg=e=>/invalid login/i.test(e.message)?'Wrong ID or passcode.':'Error: '+e.message;
 let beeped={};
 function beep(){try{const a=new (window.AudioContext||window.webkitAudioContext)();const o=a.createOscillator();o.connect(a.destination);o.frequency.value=880;o.start();o.stop(a.currentTime+.4)}catch(e){}}
 
@@ -104,10 +102,10 @@ async function refresh(force){
   if(!role)return;
   await loadSessions();
   const f=document.activeElement;
-  if(force||!f||!['INPUT','SELECT'].includes(f.tagName)){renderStaff();if(role==='owner')renderOwner()}
+  if(force||!f||!['INPUT','SELECT'].includes(f.tagName)){if(view==='shop')renderStaff();if(view==='owner')renderOwner()}
 }
 
-/* ---------- staff ---------- */
+/* ---------- shop panel ---------- */
 function renderStaff(){
   $('staff').innerHTML='<div class="grid">'+stations.map(st=>{
     const a=active(st.id);
@@ -116,6 +114,7 @@ function renderStaff(){
       ${isPS(st.type)?`<select id="c_${st.id}"><option>PS4</option><option>PS5</option></select>`:''}
       ${isPS(st.type)?`<select id="p_${st.id}" onchange="calc('${st.id}')"><option value="single">1 player</option><option value="multi2">2 players</option><option value="multi3">3 players</option><option value="multi4">4 players</option></select>`:''}
       <select id="d_${st.id}" onchange="calc('${st.id}')"><option value="30">30 min</option><option value="60" selected>1 hour</option><option value="90">1.5 hours</option><option value="120">2 hours</option></select>
+      <select id="y_${st.id}"><option value="Cash">Pay by Cash</option><option value="UPI">Pay by UPI</option></select>
       <div class="muted">Amount: <b id="a_${st.id}"></b></div>
       <button class="b" onclick="startS('${st.id}')">Start session</button></div>`;
     const m=a.mode;
@@ -123,10 +122,12 @@ function renderStaff(){
       <div class="time" id="r_${st.id}">--</div>
       <div class="muted"><b>${esc(a.name)}</b> · ${isCon(a.type)?a.type+' · ':''}${MODES[m]}<br>In ${hm(stT(a))} · ${a.paused_at?'Stopped at '+hm(Date.parse(a.paused_at)):'Out '+hm(enT(a))}<br>Played ${durLabel(a.minutes)}</div>
       <div class="bill">Bill: <b>${money(a.amount)}</b></div>
+      <select onchange="setPay('${st.id}',this.value)"><option value="Cash" ${a.pay_mode==='UPI'?'':'selected'}>Pay by Cash</option><option value="UPI" ${a.pay_mode==='UPI'?'selected':''}>Pay by UPI</option></select>
       <button class="b alt" onclick="${a.paused_at?'resume':'pause'}('${st.id}')">${a.paused_at?'▶ Resume time':'⏸ Stop time (power cut)'}</button>
       <div class="muted">Extend ${esc(a.name)}:</div>
       <div class="row"><button class="b alt" onclick="extend('${st.id}',30)">+30 min<br>${money(cost(m,30))}</button><button class="b alt" onclick="extend('${st.id}',60)">+1 hour<br>${money(cost(m,60))}</button></div>
-      <button class="b red" onclick="endS('${st.id}')">End and collect ${money(a.amount)}</button></div>`}).join('')+'</div>';
+      <button class="b red" onclick="endS('${st.id}')">End session · collect ${money(a.amount)}</button>
+      <button class="b ghost" onclick="cancelS('${st.id}')">Cancel session</button></div>`}).join('')+'</div>';
   stations.forEach(st=>{if(!active(st.id))calc(st.id)});
   tick();
 }
@@ -134,38 +135,38 @@ function calc(id){
   const type=stations.find(s=>s.id===id).type;const p=$('p_'+id);
   $('a_'+id).textContent=money(cost(modeOf(type,p&&p.value),+$('d_'+id).value));
 }
+async function upd(id,patch){
+  const a=active(id);
+  const {error}=await sb.from('sessions').update(patch).eq('id',a.id);
+  if(error){alert('Could not save: '+error.message);return false}
+  return true;
+}
 async function startS(id){
   const name=$('n_'+id).value.trim()||'Walk-in';const min=+$('d_'+id).value;
   const st=stations.find(s=>s.id===id);const c=$('c_'+id);const type=c?c.value:st.type;
   const p=$('p_'+id);const mode=modeOf(type,p&&p.value);const now=Date.now();
-  const {error}=await sb.from('sessions').insert({station:id,type,mode,name,start_at:new Date(now).toISOString(),end_at:new Date(now+min*60000).toISOString(),minutes:min,amount:cost(mode,min),ext:[],day:today()});
+  const {error}=await sb.from('sessions').insert({station:id,type,mode,name,start_at:new Date(now).toISOString(),end_at:new Date(now+min*60000).toISOString(),minutes:min,amount:cost(mode,min),ext:[],day:today(),pay_mode:$('y_'+id).value,status:'done'});
   if(error){alert('Could not save: '+error.message);return}
   await refresh(true);
 }
 async function extend(id,min){
   const a=active(id);const add=cost(a.mode,min);
   const end=(a.paused_at?enT(a):Math.max(enT(a),Date.now()))+min*60000;
-  const {error}=await sb.from('sessions').update({end_at:new Date(end).toISOString(),minutes:a.minutes+min,amount:Number(a.amount)+add,ext:[...(a.ext||[]),{min,add}]}).eq('id',a.id);
-  if(error){alert('Could not save: '+error.message);return}
-  delete beeped[id];await refresh(true);
+  if(await upd(id,{end_at:new Date(end).toISOString(),minutes:a.minutes+min,amount:Number(a.amount)+add,ext:[...(a.ext||[]),{min,add}]})){delete beeped[id];await refresh(true)}
 }
-async function pause(id){
-  const a=active(id);
-  const {error}=await sb.from('sessions').update({paused_at:new Date().toISOString()}).eq('id',a.id);
-  if(error){alert('Could not save: '+error.message);return}
-  await refresh(true);
-}
+async function setPay(id,v){await upd(id,{pay_mode:v});await refresh(true)}
+async function pause(id){if(await upd(id,{paused_at:new Date().toISOString()}))await refresh(true)}
 async function resume(id){
   const a=active(id);const gap=Date.now()-Date.parse(a.paused_at);
-  const {error}=await sb.from('sessions').update({end_at:new Date(enT(a)+gap).toISOString(),paused_at:null}).eq('id',a.id);
-  if(error){alert('Could not save: '+error.message);return}
-  delete beeped[id];await refresh(true);
+  if(await upd(id,{end_at:new Date(enT(a)+gap).toISOString(),paused_at:null})){delete beeped[id];await refresh(true)}
 }
-async function endS(id){
+async function endS(id){if(await upd(id,{ended_at:new Date().toISOString(),paused_at:null,status:'done'}))await refresh(true)}
+async function cancelS(id){
   const a=active(id);
-  const {error}=await sb.from('sessions').update({ended_at:new Date().toISOString()}).eq('id',a.id);
-  if(error){alert('Could not save: '+error.message);return}
-  await refresh(true);
+  const v=prompt('Cancel '+a.name+"'s session.\nAmount to charge for the time already played (₹). Enter 0 for no charge:",'0');
+  if(v===null)return;
+  const amt=Math.max(0,Number(v)||0);
+  if(await upd(id,{ended_at:new Date().toISOString(),paused_at:null,status:'cancelled',amount:amt}))await refresh(true);
 }
 function tick(){
   stations.forEach(st=>{
@@ -178,30 +179,48 @@ function tick(){
   });
 }
 setInterval(tick,1000);
-setInterval(()=>{if(role)refresh()},20000);
+setInterval(()=>{if(role&&(view==='shop'||view==='owner'))refresh()},20000);
 
-/* ---------- owner ---------- */
+/* ---------- owner panel ---------- */
 async function renderOwner(){
   await loadBookings();
+  if(view!=='owner')return;
   const d=sessions.filter(s=>s.day===OD);
-  const sum=l=>l.reduce((a,s)=>a+Number(s.amount),0);
-  const by=t=>sum(d.filter(s=>s.type===t));
-  const mon=sum(sessions.filter(s=>s.day.slice(0,7)===OD.slice(0,7)));
+  const mo=sessions.filter(s=>s.day.slice(0,7)===OD.slice(0,7));
+  const sum=(l,m)=>l.filter(s=>!m||s.pay_mode===m).reduce((a,s)=>a+Number(s.amount),0);
+  const by=t=>d.filter(s=>s.type===t).reduce((a,s)=>a+Number(s.amount),0);
   const busy=stations.filter(s=>active(s.id)).length;
+  const days={},months={};
+  sessions.forEach(s=>{[[days,s.day],[months,s.day.slice(0,7)]].forEach(([m,k])=>{const x=m[k]=m[k]||{n:0,c:0,u:0};x.n++;if(s.pay_mode==='UPI')x.u+=Number(s.amount);else x.c+=Number(s.amount)})});
+  const hrows=(m,n)=>Object.keys(m).sort().reverse().slice(0,n).map(k=>`<tr><td>${k}</td><td>${m[k].n}</td><td>${money(m[k].c)}</td><td>${money(m[k].u)}</td><td><b>${money(m[k].c+m[k].u)}</b></td></tr>`).join('');
+  const head='<tr><th>Date</th><th>Sessions</th><th>Cash</th><th>UPI</th><th>Total</th></tr>';
   $('owner').innerHTML=`<div class="card" style="margin-bottom:12px"><span class="muted">Date</span><input type="date" value="${OD}" onchange="OD=this.value||today();renderOwner()"></div>
     <div class="stats">
     <div class="stat"><span class="muted">Earnings on this date</span><b>${money(sum(d))}</b></div>
-    <div class="stat"><span class="muted">This month</span><b>${money(mon)}</b></div>
+    <div class="stat"><span class="muted">Cash</span><b>${money(sum(d,'Cash'))}</b></div>
+    <div class="stat"><span class="muted">UPI</span><b>${money(sum(d,'UPI'))}</b></div>
+    <div class="stat"><span class="muted">This month</span><b>${money(sum(mo))}</b></div>
+    <div class="stat"><span class="muted">Month Cash</span><b>${money(sum(mo,'Cash'))}</b></div>
+    <div class="stat"><span class="muted">Month UPI</span><b>${money(sum(mo,'UPI'))}</b></div>
     <div class="stat"><span class="muted">Sessions</span><b>${d.length}</b></div>
     <div class="stat"><span class="muted">In use now</span><b>${busy}/${stations.length}</b></div></div>
-    <div class="card" style="margin-bottom:12px"><h3>Earnings by game</h3>
+    <div class="card" style="margin-bottom:12px"><h3>Earnings by game (this date)</h3>
     <p>${['PS4','PS5','Car Simulator','Meta Quest VR'].map(t=>`${t}: <b>${money(by(t))}</b>`).join(' &nbsp; ')}</p></div>
     <div class="card" style="margin-bottom:12px"><h3>Prices (₹)</h3><div class="wrap"><table><tr><th>Game</th><th>30 min</th><th>1 hour</th></tr>
     ${Object.keys(MODES).map(k=>`<tr><td>${k==='single'?'PS4 / PS5, 1 player':MODES[k]}</td>${[30,60].map(t=>`<td><input type="number" min="0" value="${P[k][t]}" onchange="savePrice('${k}',${t},this.value)"></td>`).join('')}</tr>`).join('')}</table></div></div>
-    <div class="card" style="margin-bottom:12px"><h3>Sessions</h3><div class="wrap"><table><tr><th>Station</th><th>Customer</th><th>In</th><th>Out</th><th>Amount</th></tr>
-    ${d.slice().reverse().map(s=>`<tr><td>${s.station}${isCon(s.type)?' · '+s.type:''}</td><td>${esc(s.name)}${s.ext&&s.ext.length?' <span class="muted">(extended '+s.ext.length+'x)</span>':''}</td><td>${hm(stT(s))}</td><td>${hm(s.ended_at||s.end_at)}</td><td>${money(s.amount)}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">No sessions on this date.</td></tr>'}</table></div></div>
+    <div class="card" style="margin-bottom:12px"><h3>Monthly earnings</h3><div class="wrap"><table>${head.replace('Date','Month')}${hrows(months,6)}</table></div></div>
+    <div class="card" style="margin-bottom:12px"><h3>Daily earnings (last 31 days)</h3><div class="wrap"><table>${head}${hrows(days,31)}</table></div></div>
+    <div class="card" style="margin-bottom:12px"><h3>Sessions on this date</h3><div class="wrap"><table><tr><th>Station</th><th>Customer</th><th>In</th><th>Out</th><th>Amount</th><th>Paid</th></tr>
+    ${d.slice().reverse().map(s=>`<tr><td>${s.station}${isCon(s.type)?' · '+s.type:''}</td><td>${esc(s.name)}${s.status==='cancelled'?' <span class="muted">(cancelled)</span>':''}${s.ext&&s.ext.length?' <span class="muted">(extended '+s.ext.length+'x)</span>':''}</td><td>${hm(stT(s))}</td><td>${hm(s.ended_at||s.end_at)}</td><td>${money(s.amount)}</td><td>${s.pay_mode}</td></tr>`).join('')||'<tr><td colspan="6" class="muted">No sessions on this date.</td></tr>'}</table></div></div>
+    <div class="card" style="margin-bottom:12px"><h3>Customer history</h3><input placeholder="Search customer name" value="${esc(q)}" oninput="q=this.value;renderHist()"><div class="wrap" id="hist"></div></div>
     <div class="card"><h3>Online bookings</h3><div class="wrap"><table><tr><th>Date</th><th>Time</th><th>Game</th><th>Customer</th><th>Status</th></tr>
     ${bookings.map(b=>`<tr><td>${b.date}</td><td>${b.slot}:00</td><td>${b.type}${isCon(b.type)&&b.players&&b.players!=='single'?' ('+MODES[b.players]+')':''}</td><td>${esc(b.name)}<br><span class="muted">${esc(b.phone)}</span></td><td>${b.status}<br>${b.status==='pending'?`<button class="slot" onclick="setStatus(${b.id},'confirmed')">Confirm</button> `:''}${b.status!=='cancelled'?`<button class="slot" onclick="setStatus(${b.id},'cancelled')">Cancel</button>`:''}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">No bookings yet.</td></tr>'}</table></div></div>`;
+  renderHist();
+}
+function renderHist(){
+  const t=q.trim().toLowerCase();
+  const l=sessions.filter(s=>!t||s.name.toLowerCase().includes(t)).slice().reverse().slice(0,60);
+  $('hist').innerHTML='<table><tr><th>Date</th><th>Customer</th><th>Game</th><th>Amount</th><th>Paid</th></tr>'+(l.map(s=>`<tr><td>${s.day}</td><td>${esc(s.name)}${s.status==='cancelled'?' <span class="muted">(cancelled)</span>':''}</td><td>${s.station}${isCon(s.type)?' · '+s.type:''}</td><td>${money(s.amount)}</td><td>${s.pay_mode}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">No sessions found.</td></tr>')+'</table>';
 }
 async function savePrice(k,t,v){
   P[k][t]=+v;
@@ -245,26 +264,51 @@ async function confirmB(){
   try{window.open(url,'_blank')}catch(e){}
 }
 
-/* ---------- login ---------- */
-const LBL={staff:'Staff',owner:'Owner',book:'Book a slot',login:'Staff / Owner login'};
+/* ---------- login and navigation ---------- */
+let taps=0,tapT=0;
+function logoTap(){const n=Date.now();taps=(n-tapT<2500)?taps+1:1;tapT=n;if(taps>=5){taps=0;if(!role)show('login')}}
 function renderNav(v){
-  const tabs=role?(role==='owner'?['staff','owner','book']:['staff','book']):['book','login'];
-  $('nav').innerHTML=tabs.map(t=>`<button class="${t===v?'on':''}" onclick="show('${t}')">${LBL[t]}</button>`).join('')+(role?'<button onclick="logout()">Logout</button>':'');
+  $('nav').innerHTML=role?[['shop','Shop panel'],['owner','Owner panel']].map(x=>`<button class="${x[0]===v?'on':''}" onclick="go('${x[0]}')">${x[1]}</button>`).join('')+'<button onclick="logout()">Logout</button>':'';
 }
 function show(v){
-  if((v==='staff'&&!role)||(v==='owner'&&role!=='owner'))v='login';
-  if(v==='login'&&role)v='staff';
-  ['staff','owner','book','login'].forEach(x=>$(x).classList.toggle('hide',x!==v));
-  if(v==='owner')renderOwner();
+  if(!role&&['home','shop','owner','ownerlogin'].includes(v))v='login';
+  if(role&&v==='login')v='home';
+  if(v==='owner'&&role!=='owner')v='ownerlogin';
+  if(v==='ownerlogin'&&role==='owner')v='owner';
+  view=v;
+  const sec={login:'login',home:'login',ownerlogin:'login',shop:'staff',owner:'owner',book:'book'}[v];
+  ['staff','owner','book','login'].forEach(x=>$(x).classList.toggle('hide',x!==sec));
   if(v==='login')renderLogin();
+  if(v==='home')renderHome();
+  if(v==='ownerlogin')renderOwnerLogin();
+  if(v==='shop')renderStaff();
+  if(v==='owner')renderOwner();
   if(v==='book')renderBook();
   renderNav(v);
 }
+async function go(v){
+  if(role==='owner'&&v!=='owner'){await leaveOwner();if(!role)return}
+  show(v);
+}
+const PASSIN=`<input id="lp" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="6-digit passcode" autocomplete="off" oninput="this.value=this.value.replace(/\\D/g,'')"`;
 function renderLogin(){
-  $('login').innerHTML=`<div class="card"><h2 style="font-size:20px;margin-bottom:8px">Staff / Owner login</h2>
-  <select id="le"><option value="">Select your name</option>${PEOPLE.map(p=>`<option value="${p[0]}">${p[1]}</option>`).join('')}</select>
-  <input id="lp" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="6-digit passcode" autocomplete="off" oninput="this.value=this.value.replace(/\D/g,'')" onkeydown="if(event.key==='Enter')doLogin()">
-  <button class="b" onclick="doLogin()">Login</button><div id="lm" class="muted" style="margin-top:8px"></div></div>`;
+  $('login').innerHTML=`<div class="card"><h2 style="font-size:20px;margin-bottom:8px">Shop login</h2>
+  <input id="le" type="text" placeholder="Shop ID" autocomplete="off">
+  ${PASSIN} onkeydown="if(event.key==='Enter')doLogin()">
+  <button class="b" onclick="doLogin()">Login</button><div id="lm" class="muted" style="margin-top:8px"></div>
+  <button class="b ghost2" onclick="show('book')">Back to booking</button></div>`;
+}
+function renderHome(){
+  $('login').innerHTML=`<div class="card"><h2 style="font-size:20px;margin-bottom:12px">Welcome to Pixel Paradise</h2>
+  <button class="b big" onclick="go('shop')">Shop panel</button>
+  <button class="b big alt" onclick="go('owner')">Owner panel</button></div>`;
+}
+function renderOwnerLogin(){
+  $('login').innerHTML=`<div class="card"><h2 style="font-size:20px;margin-bottom:8px">Owner login</h2>
+  <select id="le"><option value="">Select owner</option>${OWNERS.map(o=>`<option value="${o[0]}">${o[1]} (Owner)</option>`).join('')}</select>
+  ${PASSIN} onkeydown="if(event.key==='Enter')doOwnerLogin()">
+  <button class="b" onclick="doOwnerLogin()">Open Owner panel</button><div id="lm" class="muted" style="margin-top:8px"></div>
+  <button class="b ghost2" onclick="go('home')">Back</button></div>`;
 }
 async function setRole(){
   const {data}=await sb.rpc('my_role');role=data||null;
@@ -272,23 +316,44 @@ async function setRole(){
   return role;
 }
 async function doLogin(){
-  const name=$('le').value,code=$('lp').value;
-  if(!name||code.length!==6){$('lm').textContent='Select your name and enter your 6 digit passcode.';return}
-  const {error}=await sb.auth.signInWithPassword({email:name+LOGIN_DOMAIN,password:code});
-  if(error){$('lm').textContent='Error: '+error.message;return}
-  if(!await setRole()){$('lm').textContent='This login does not have access.';return}
-  await loadPrices();await loadSessions();renderStaff();listen();show('staff');
+  const id=$('le').value.toLowerCase().replace(/[^a-z0-9]/g,''),code=$('lp').value;
+  if(!id||code.length!==6){$('lm').textContent='Enter the Shop ID and the 6 digit passcode.';return}
+  const cred={email:id+LOGIN_DOMAIN,password:code};
+  const {error}=await sb.auth.signInWithPassword(cred);
+  if(error){$('lm').textContent=errMsg(error);return}
+  await setRole();
+  if(role!=='shop'){if(role)await sb.auth.signOut();role=null;$('lm').textContent='Wrong ID or passcode.';return}
+  shopCred=cred;
+  await loadPrices();await loadSessions();listen();show('home');
 }
-function listen(){sb.channel('sess').on('postgres_changes',{event:'*',schema:'public',table:'sessions'},()=>refresh()).subscribe()}
-async function logout(){await sb.removeAllChannels();await sb.auth.signOut();role=null;sessions=[];show('book')}
+async function doOwnerLogin(){
+  const name=$('le').value,code=$('lp').value;
+  if(!name||code.length!==6){$('lm').textContent='Select the owner and enter the 6 digit passcode.';return}
+  const {error}=await sb.auth.signInWithPassword({email:name+LOGIN_DOMAIN,password:code});
+  if(error){$('lm').textContent=errMsg(error);return}
+  await setRole();
+  if(role!=='owner'){await leaveOwner();if(role)$('lm').textContent='This login is not an owner.';return}
+  await loadSessions();listen();show('owner');
+}
+async function leaveOwner(){
+  if(shopCred){const {error}=await sb.auth.signInWithPassword(shopCred);if(!error&&await setRole()){await loadSessions();listen();return}}
+  await logout();
+}
+async function listen(){await sb.removeAllChannels();sb.channel('sess').on('postgres_changes',{event:'*',schema:'public',table:'sessions'},()=>refresh()).subscribe()}
+async function logout(){await sb.removeAllChannels();await sb.auth.signOut();role=null;shopCred=null;sessions=[];show('book')}
+window.addEventListener('hashchange',()=>{if(location.hash==='#shop'&&!role)show('login')});
 (async function init(){
-  if(SUPABASE_URL.startsWith('PASTE')){$('cfg').classList.remove('hide')}
+  if(String(SUPABASE_URL).startsWith('PASTE')||String(SUPABASE_KEY).startsWith('PASTE'))$('cfg').classList.remove('hide');
   try{
     await loadPrices();
     const {data}=await sb.auth.getSession();
-    if(data.session&&await setRole()){await loadSessions();renderStaff();listen();show('staff');return}
+    if(data.session){
+      await setRole();
+      if(role==='owner'){await sb.auth.signOut();role=null}
+      if(role==='shop'){await loadSessions();listen();show('home');return}
+    }
   }catch(e){}
-  show('book');
+  show(location.hash==='#shop'?'login':'book');
 })();
 </script>
 </body>
