@@ -6,8 +6,8 @@ const BIZ={
   city:'[vellore]',
   email:'[pixelpbt@gmail.com]',
   phone:'+91 96296 68242',
-  officer:'[Grievance Officer name]',
-  officerEmail:'[grievance email address]',
+  officer:'[taha]',
+  officerEmail:'[pixelpbt@gmail.com]',
   officerPhone:'+91 96296 68242',
   site:'pixelpbt.in',
   updated:'8 November 2026'
