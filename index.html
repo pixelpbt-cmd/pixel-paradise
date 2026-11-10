@@ -377,12 +377,17 @@ function waBtn(b){
 }
 
 /* ---------- customer booking ---------- */
-let B={type:'PS5',pl:'single',date:today(),slot:null},TK=[];
+const istDay=n=>{const d=new Date(new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'})+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
+const istHour=()=>(+new Date().toLocaleString('en-GB',{timeZone:'Asia/Kolkata',hour:'2-digit',hour12:false}))%24;
+let B={type:'PS5',pl:'single',date:istDay(0),slot:null},TK=[];
 const grp=t=>isCon(t)?'PS':t;
 async function renderBook(){
   const {data}=await sb.rpc('get_taken_slots',{d:B.date});TK=data||[];drawBook();
 }
 function drawBook(){
+  const days=[0,1,2].map(istDay);
+  if(!days.includes(B.date)){B.date=days[0];B.slot=null}
+  const past=h=>B.date===days[0]&&h<istHour();
   const cap=grp(B.type)==='PS'?6:1;
   const slots=[];for(let h=10;h<=23;h++)slots.push(h);
   const taken=h=>((TK.find(r=>r.grp===grp(B.type)&&r.slot===h)||{}).n||0)>=cap;
@@ -392,9 +397,10 @@ function drawBook(){
     ${['PS4','PS5','Car Simulator','Meta Quest VR'].map(t=>`<option ${t===B.type?'selected':''}>${t}</option>`).join('')}</select>
     ${isCon(B.type)?`<label class="muted">Players</label><select onchange="B.pl=this.value;drawBook()">${['single','multi2','multi3','multi4'].map(k=>`<option value="${k}" ${B.pl===k?'selected':''}>${MODES[k]}</option>`).join('')}</select>`:''}
     <div class="muted">Price: ${money(P[m][30])} for 30 min · ${money(P[m][60])} for 1 hour</div>
-    <label class="muted">Date</label><input type="date" min="${today()}" value="${B.date}" onchange="B.date=this.value||today();B.slot=null;renderBook()">
+    <label class="muted">Date (you can book up to 2 days ahead)</label>
+    <div class="slots">${days.map((d,i)=>`<button class="slot ${B.date===d?'sel':''}" onclick="B.date='${d}';B.slot=null;renderBook()">${['Today','Tomorrow','Day after'][i]}<br>${new Date(d+'T00:00:00Z').toLocaleDateString('en-IN',{day:'numeric',month:'short',timeZone:'UTC'})}</button>`).join('')}</div>
     <label class="muted">Pick a one-hour slot</label>
-    <div class="slots">${slots.map(h=>`<button class="slot ${B.slot===h?'sel':''}" ${taken(h)?'disabled':''} onclick="B.slot=${h};drawBook()">${h>12?h-12:h}${h>=12?' PM':' AM'}</button>`).join('')}</div>
+    <div class="slots">${slots.map(h=>`<button class="slot ${B.slot===h?'sel':''}" ${taken(h)||past(h)?'disabled':''} onclick="B.slot=${h};drawBook()">${h>12?h-12:h}${h>=12?' PM':' AM'}</button>`).join('')}</div>
     <input id="bn" maxlength="60" placeholder="Your name"><input id="bp" maxlength="20" type="tel" placeholder="Phone number">
     <label class="chk"><input type="checkbox" id="bc">I agree to the <a onclick="showLegal('terms')">Terms</a> and <a onclick="showLegal('privacy')">Privacy Policy</a>. I am 18 or older, or I am booking with my parent or guardian.</label><button class="b" onclick="confirmB()">Confirm booking</button><div id="bm" class="muted" style="margin-top:8px"></div></div>
     <div class="card" style="margin-top:12px"><h3 style="font-size:15px">Check my booking status</h3><input id="sp" type="tel" maxlength="20" placeholder="Your phone number"><button class="b alt" onclick="checkStatus()">Check status</button><div id="sm" class="muted" style="margin-top:8px"></div></div>`;
@@ -410,6 +416,7 @@ async function checkStatus(){
 async function confirmB(){
   const name=$('bn').value.trim(),phone=$('bp').value.trim();
   if(B.slot===null||!name||!phone){$('bm').textContent='Pick a slot and enter your name and phone number.';return}
+  if(![0,1,2].map(istDay).includes(B.date)||(B.date===istDay(0)&&B.slot<istHour())){$('bm').textContent='This slot is not available. Please pick another date or time.';B.slot=null;drawBook();return}
   if(!$('bc').checked){$('bm').textContent='Please agree to the Terms and Privacy Policy.';return}
   const row={date:B.date,slot:B.slot,type:B.type,players:B.pl,name,phone};
   let {error}=await sb.from('bookings').insert({...row,consent_at:new Date().toISOString()});
