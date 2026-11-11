@@ -119,6 +119,34 @@ async function refresh(force){
 }
 
 /* ---------- shop panel ---------- */
+const bk=s=>s.bill_id||s.id;
+const held=()=>sessions.filter(s=>s.ended_at&&s.paid===false);
+function openBills(){const m={};held().forEach(s=>{const k=bk(s);const b=m[k]=m[k]||{k,name:s.name,items:[],total:0};b.items.push(s);b.total+=Number(s.amount)});return Object.values(m)}
+const heldFor=a=>a.bill_id?held().filter(s=>bk(s)===a.bill_id).reduce((t,s)=>t+Number(s.amount),0):0;
+const itemsTxt=l=>l.map(s=>`${s.station}${isCon(s.type)?' ('+s.type+')':''} ${money(s.amount)}`).join(' + ');
+function billSelect(id){
+  const b=openBills();if(!b.length)return '';
+  return `<select id="b_${id}"><option value="">New customer (type the name above)</option>${b.map(x=>`<option value="${x.k}">Continue ${esc(x.name)}'s bill (${money(x.total)} pending)</option>`).join('')}</select>`;
+}
+function billNote(a){
+  const h=a.bill_id?held().filter(s=>bk(s)===a.bill_id):[];
+  if(!h.length)return `<div class="bill">Bill: <b>${money(a.amount)}</b></div>`;
+  const hs=h.reduce((t,s)=>t+Number(s.amount),0);
+  return `<div class="bill">This game: <b>${money(a.amount)}</b></div><div class="muted">Earlier on this bill: ${itemsTxt(h)}</div><div class="bill">Total to collect: <b>${money(a.amount+hs)}</b></div>`;
+}
+function openBillsHtml(){
+  const b=openBills();if(!b.length)return '';
+  return `<div class="card" style="margin-bottom:12px"><h3>Open bills (not paid yet)</h3>`+b.map(x=>`<div class="muted" style="margin:10px 0 4px"><b>${esc(x.name)}</b> · ${itemsTxt(x.items)}<br>Total: <b>${money(x.total)}</b></div>
+    <select id="ob_${x.k}"><option value="Cash">Pay by Cash</option><option value="UPI">Pay by UPI</option></select>
+    <button class="b" onclick="settleBill(${x.k})">Collect ${money(x.total)}</button>`).join('')+`<div class="note">A customer who finished one game and may play another later is kept here. Start the next game with "Continue ... bill" to combine them, or collect the money here.</div></div>`;
+}
+async function settleBill(k){
+  const ids=held().filter(s=>bk(s)===k).map(s=>s.id);
+  const {error}=await sb.from('sessions').update({paid:true,pay_mode:$('ob_'+k).value}).in('id',ids);
+  if(error){alert('Could not save: '+error.message);return}
+  await refresh(true);
+}
+async function holdS(id){if(await upd(id,{ended_at:new Date().toISOString(),paused_at:null,status:'done',paid:false}))await refresh(true)}
 const shopTabs=()=>`<div class="stab"><button class="${spage==='play'?'on':''}" onclick="spage='play';renderStaff()">Screens</button><button class="${spage==='today'?'on':''}" onclick="openToday()">Today's earnings</button></div>`;
 async function openToday(){
   spage='today';
@@ -129,15 +157,16 @@ function todayHtml(){
   const d=sessions.filter(s=>s.day===today()).sort((a,b)=>a.id-b.id);
   const sum=m=>d.filter(s=>!m||s.pay_mode===m).reduce((a,s)=>a+Number(s.amount),0);
   const live=d.filter(s=>!s.ended_at).length;
+  const wait=d.filter(s=>s.ended_at&&s.paid===false).reduce((a,s)=>a+Number(s.amount),0);
   let run=0;
   const steps=d.map((s,i)=>{
     run+=Number(s.amount);
-    const st=!s.ended_at?`▶ Playing now · bill so far ${money(s.amount)}`:s.status==='cancelled'?`✕ Cancelled · charged ${money(s.amount)}`:`✓ Saved · ${money(s.amount)}`;
-    return `<li><b>Step ${i+1}</b> · ${hm(stT(s))}<br>${s.station}${isCon(s.type)?' · '+s.type:''} · ${MODES[s.mode]||''} · ${esc(s.name)}<br>${durLabel(s.minutes)} · ${s.pay_mode} · <b>${st}</b><br><span class="muted">Total so far: ${money(run)}</span></li>`;
+    const st=!s.ended_at?`▶ Playing now · bill so far ${money(s.amount)}`:s.status==='cancelled'?`✕ Cancelled · charged ${money(s.amount)}`:s.paid===false?`⏳ On hold, not paid yet · ${money(s.amount)}`:`✓ Saved · ${money(s.amount)}`;
+    return `<li><b>Step ${i+1}</b> · ${hm(stT(s))}${s.bill_id&&d.findIndex(x=>x.id===s.bill_id)>=0?' · same customer bill as Step '+(d.findIndex(x=>x.id===s.bill_id)+1):''}<br>${s.station}${isCon(s.type)?' · '+s.type:''} · ${MODES[s.mode]||''} · ${esc(s.name)}<br>${durLabel(s.minutes)} · ${s.pay_mode} · <b>${st}</b><br><span class="muted">Total so far: ${money(run)}</span></li>`;
   }).join('');
   return `<div class="card" style="margin-bottom:12px"><h3>Today's earnings</h3>
     <div class="time" style="color:var(--neon)">${money(sum())}</div>
-    <div class="muted">Cash ${money(sum('Cash'))} · UPI ${money(sum('UPI'))}<br>${d.length} session${d.length===1?'':'s'} today · ${live} playing now</div>
+    <div class="muted">Cash ${money(sum('Cash'))} · UPI ${money(sum('UPI'))}<br>${d.length} session${d.length===1?'':'s'} today · ${live} playing now${wait?'<br>⏳ Waiting to be collected: '+money(wait):''}</div>
     <div class="muted" style="margin-top:6px">✓ Read from the database${checkedAt?' at '+hm(checkedAt):''}</div>
     <button class="b alt" onclick="openToday()">Refresh from database</button></div>
   <div class="card"><h3>Step by step</h3>${steps?'<ol class="steps">'+steps+'</ol>':'<div class="muted">No game saved yet today. Start a session on the Screens tab and it will appear here.</div>'}
@@ -148,10 +177,11 @@ function renderStaff(){
   renderPlay();
 }
 function renderPlay(){
-  $('staff').innerHTML=shopTabs()+'<div class="grid">'+stations.map(st=>{
+  $('staff').innerHTML=shopTabs()+openBillsHtml()+'<div class="grid">'+stations.map(st=>{
     const a=active(st.id);
     if(!a)return `<div class="card free"><h3>${st.id}<span class="tag">Free</span></h3>
       <input id="n_${st.id}" placeholder="Customer name">
+      ${billSelect(st.id)}
       ${isPS(st.type)?`<select id="c_${st.id}"><option>PS4</option><option>PS5</option></select>`:''}
       ${isPS(st.type)?`<select id="p_${st.id}" onchange="calc('${st.id}')"><option value="single">1 player</option><option value="multi2">2 players</option><option value="multi3">3 players</option><option value="multi4">4 players</option></select>`:''}
       <select id="d_${st.id}" onchange="calc('${st.id}')"><option value="30">30 min</option><option value="60" selected>1 hour</option><option value="90">1.5 hours</option><option value="120">2 hours</option></select>
@@ -162,12 +192,13 @@ function renderPlay(){
     return `<div class="card busy" id="c_${st.id}"><h3>${st.id}<span class="tag" id="t_${st.id}">Playing</span></h3>
       <div class="time" id="r_${st.id}">--</div>
       <div class="muted"><b>${esc(a.name)}</b> · ${isCon(a.type)?a.type+' · ':''}${MODES[m]}<br>In ${hm(stT(a))} · ${a.paused_at?'Stopped at '+hm(Date.parse(a.paused_at)):'Out '+hm(enT(a))}<br>Played ${durLabel(a.minutes)}</div>
-      <div class="bill">Bill: <b>${money(a.amount)}</b></div>
+      ${billNote(a)}
       <select onchange="setPay('${st.id}',this.value)"><option value="Cash" ${a.pay_mode==='UPI'?'':'selected'}>Pay by Cash</option><option value="UPI" ${a.pay_mode==='UPI'?'selected':''}>Pay by UPI</option></select>
       <button class="b alt" onclick="${a.paused_at?'resume':'pause'}('${st.id}')">${a.paused_at?'▶ Resume time':'⏸ Stop time (power cut)'}</button>
       <div class="muted">Extend ${esc(a.name)}:</div>
       <div class="row"><button class="b alt" onclick="extend('${st.id}',30)">+30 min<br>${money(cost(m,30))}</button><button class="b alt" onclick="extend('${st.id}',60)">+1 hour<br>${money(cost(m,60))}</button></div>
-      <button class="b red" onclick="endS('${st.id}')">End session · collect ${money(a.amount)}</button>
+      <button class="b red" onclick="endS('${st.id}')">End session · collect ${money(a.amount+heldFor(a))}</button>
+      <button class="b alt" onclick="holdS('${st.id}')">Hold bill: customer will continue later</button>
       <button class="b ghost" onclick="cancelS('${st.id}')">Cancel session</button></div>`}).join('')+'</div>';
   stations.forEach(st=>{if(!active(st.id))calc(st.id)});
   tick();
@@ -183,10 +214,11 @@ async function upd(id,patch){
   return true;
 }
 async function startS(id){
-  const name=$('n_'+id).value.trim()||'Walk-in';const min=+$('d_'+id).value;
+  const bsel=$('b_'+id);const bill=bsel&&bsel.value?+bsel.value:null;const hb=bill?openBills().find(x=>x.k===bill):null;
+  const name=hb?hb.name:($('n_'+id).value.trim()||'Walk-in');const min=+$('d_'+id).value;
   const st=stations.find(s=>s.id===id);const c=$('c_'+id);const type=c?c.value:st.type;
   const p=$('p_'+id);const mode=modeOf(type,p&&p.value);const now=Date.now();
-  const {error}=await sb.from('sessions').insert({station:id,type,mode,name,start_at:new Date(now).toISOString(),end_at:new Date(now+min*60000).toISOString(),minutes:min,amount:cost(mode,min),ext:[],day:today(),pay_mode:$('y_'+id).value,status:'done'});
+  const {error}=await sb.from('sessions').insert({station:id,type,mode,name,start_at:new Date(now).toISOString(),end_at:new Date(now+min*60000).toISOString(),minutes:min,amount:cost(mode,min),ext:[],day:today(),pay_mode:$('y_'+id).value,status:'done',...(bill?{bill_id:bill}:{})});
   if(error){alert('Could not save: '+error.message);return}
   await refresh(true);
 }
@@ -201,7 +233,13 @@ async function resume(id){
   const a=active(id);const gap=Date.now()-Date.parse(a.paused_at);
   if(await upd(id,{end_at:new Date(enT(a)+gap).toISOString(),paused_at:null})){delete beeped[id];await refresh(true)}
 }
-async function endS(id){if(await upd(id,{ended_at:new Date().toISOString(),paused_at:null,status:'done'}))await refresh(true)}
+async function endS(id){
+  const a=active(id);
+  const mates=a.bill_id?held().filter(s=>bk(s)===a.bill_id).map(s=>s.id):[];
+  if(!await upd(id,{ended_at:new Date().toISOString(),paused_at:null,status:'done'}))return;
+  if(mates.length){const {error}=await sb.from('sessions').update({paid:true,pay_mode:a.pay_mode}).in('id',mates);if(error)alert('Could not save the earlier games on this bill: '+error.message)}
+  await refresh(true);
+}
 async function cancelS(id){
   const a=active(id);
   const v=prompt('Cancel '+a.name+"'s session.\nAmount to charge for the time already played (₹). Enter 0 for no charge:",'0');
