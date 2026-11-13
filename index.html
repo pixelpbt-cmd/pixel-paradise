@@ -47,6 +47,40 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="config.js"></script>
 <script src="legal.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* GAMING LOOK */
+:root{--cut:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+body{font-family:Rajdhani,sans-serif;font-weight:600;font-size:16px;background:radial-gradient(circle at 12% -5%,#3a1b8f 0,transparent 45%),radial-gradient(circle at 96% 8%,rgba(160,40,200,.35) 0,transparent 40%),#0a0820;background-attachment:fixed}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.03) 0 1px,transparent 1px 4px)}
+main,header,footer,nav{position:relative;z-index:1}
+h1,h2,h3,.time,.stat b,button,.tag,.bill b,th{font-family:Orbitron,sans-serif!important;letter-spacing:.05em}
+.card,.stat,button,.slot,input,select,.note,.sheet,.tag{border-radius:0!important;clip-path:var(--cut)}
+.tag{clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+:focus-visible{outline:3px solid #f4ff1a!important;outline-offset:-4px!important}
+.card{background:linear-gradient(160deg,#1c1263,#120c3d);border:2px solid #3b2fa0}
+.card.free{border-color:#2de2f5}.card.busy{border-color:#f4ff1a}.card.paused{border-color:#7aa7ff}
+.card h3{font-size:14px}
+.time{font-size:38px!important;color:#f4ff1a;text-shadow:0 0 14px rgba(244,255,26,.55)}
+button.b{background:linear-gradient(180deg,#faff72,#f4ff1a);color:#0a0820;border:0;box-shadow:none;text-transform:uppercase;font-size:13px}
+button.b.alt{background:linear-gradient(180deg,#7df0ff,#2de2f5);color:#0a0820}
+button.b.red{background:linear-gradient(180deg,#ff7a92,#ff4d6d);color:#fff}
+button.b.ghost,button.b.ghost2{background:#1d1659;color:#ff7a92;border:0}button.b.ghost2{color:#cfc8ff}
+#nav button,.sub button,.stab button{background:#1d1659;color:#cfc8ff;border:0;box-shadow:none;text-transform:uppercase;font-size:12px;padding:12px 10px}
+#nav button.on,.sub button.on,.stab button.on{background:#f4ff1a;color:#0a0820}
+#shopbtn{background:#2de2f5;color:#0a0820;border:0;font-size:12px;padding:10px 14px;clip-path:var(--cut);border-radius:0}
+.slot{background:#1d1659;color:#cfc8ff;border:0;box-shadow:none;font-size:12px;min-height:46px}
+.slot.sel{background:#f4ff1a;color:#0a0820;box-shadow:none}
+.slot:disabled{opacity:.35;text-decoration:none}
+.gm .slot{min-height:64px;font-size:13px}
+input,select{background:#0d0a33;border:2px solid #3b2fa0;color:#fff;font-family:Rajdhani,sans-serif;font-weight:700}
+.stat{background:linear-gradient(160deg,#1c1263,#120c3d);border:2px solid #3b2fa0}
+.stat b{font-size:24px;color:#f4ff1a}
+.sheet{background:#150f45}
+header img{filter:drop-shadow(0 0 18px rgba(130,70,255,.6))}
+footer .cr{margin-top:6px;font:700 12px Rajdhani,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+footer .crl{width:170px;height:auto;border-radius:0;mix-blend-mode:screen;margin-top:0}
+</style>
 </head>
 <body>
 <header><div class="top"><button id="shopbtn" onclick="show('login')">🔒 Shop login</button></div><img alt="Pixel Paradise PlayStation Arena" src="logo.png" onclick="logoTap()"></header>
@@ -59,7 +93,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 <section id="book" class="hide"></section>
 <section id="login" class="hide"></section>
 </main>
-<footer><div class="ll"><a onclick="showLegal('privacy')">Privacy Policy</a>·<a onclick="showLegal('terms')">Terms and Conditions</a>·<a onclick="showLegal('refund')">Cancellation and Refund</a>·<a onclick="showLegal('cookies')">Cookie Policy</a>·<a onclick="showLegal('contact')">Contact and Grievance</a></div><img src="mtech.jpg" alt="M Technology"><div>Created by FatahX</div></footer>
+<footer><div class="ll"><a onclick="showLegal('privacy')">Privacy Policy</a>·<a onclick="showLegal('terms')">Terms and Conditions</a>·<a onclick="showLegal('refund')">Cancellation and Refund</a>·<a onclick="showLegal('cookies')">Cookie Policy</a>·<a onclick="showLegal('contact')">Contact and Grievance</a></div><div class="cr">Created by</div><img class="crl" src="fexora.jpg" alt="Fexora Digital"></footer>
 <div id="legal" class="modal hide" onclick="if(event.target===this)closeLegal()"><div class="sheet"><button class="x" onclick="closeLegal()">Close ✕</button><div id="lgBody"></div></div></div>
 
 <script>
@@ -459,9 +493,9 @@ function drawBook(){
   const taken=h=>((TK.find(r=>r.grp===grp(B.type)&&r.slot===h)||{}).n||0)>=cap;
   const m=modeOf(B.type,B.pl);
   $('book').innerHTML=`<div class="card"><h2 style="font-size:20px;margin-bottom:8px">Book your game</h2>
-    <label class="muted">Game</label><select onchange="B.type=this.value;B.slot=null;drawBook()">
-    ${['PS4','PS5','Car Simulator','Meta Quest VR'].map(t=>`<option ${t===B.type?'selected':''}>${t}</option>`).join('')}</select>
-    ${isCon(B.type)?`<label class="muted">Players</label><select onchange="B.pl=this.value;drawBook()">${['single','multi2','multi3','multi4'].map(k=>`<option value="${k}" ${B.pl===k?'selected':''}>${MODES[k]}</option>`).join('')}</select>`:''}
+    <label class="muted">Choose your game</label>
+    <div class="slots gm">${['PS5','PS4','Car Simulator','Meta Quest VR'].map(t=>`<button class="slot ${t===B.type?'sel':''}" onclick="B.type='${t}';B.slot=null;drawBook()">${t.toUpperCase()}</button>`).join('')}</div>
+    ${isCon(B.type)?`<label class="muted">Players</label><div class="slots">${['single','multi2','multi3','multi4'].map((k,i)=>`<button class="slot ${B.pl===k?'sel':''}" onclick="B.pl='${k}';drawBook()">${i+1} PLAYER${i?'S':''}</button>`).join('')}</div>`:''}
     <div class="muted">Price: ${money(P[m][30])} for 30 min · ${money(P[m][60])} for 1 hour</div>
     <label class="muted">Date (you can book up to 2 days ahead)</label>
     <div class="slots">${days.map((d,i)=>`<button class="slot ${B.date===d?'sel':''}" onclick="B.date='${d}';B.slot=null;renderBook()">${['Today','Tomorrow','Day after'][i]}<br>${new Date(d+'T00:00:00Z').toLocaleDateString('en-IN',{day:'numeric',month:'short',timeZone:'UTC'})}</button>`).join('')}</div>
