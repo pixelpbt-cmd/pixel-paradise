@@ -53,7 +53,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 :root{--cut:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
 body{font-family:Rajdhani,sans-serif;font-weight:600;font-size:16px;background:radial-gradient(circle at 12% -5%,#3a1b8f 0,transparent 45%),radial-gradient(circle at 96% 8%,rgba(160,40,200,.35) 0,transparent 40%),#0a0820;background-attachment:fixed}
 body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.03) 0 1px,transparent 1px 4px)}
-main,header,footer,nav{position:relative;z-index:1}
+main,header,footer{position:relative;z-index:1}
 h1,h2,h3,.time,.stat b,button,.tag,.bill b,th{font-family:Orbitron,sans-serif!important;letter-spacing:.05em}
 .card,.stat,button,.slot,input,select,.note,.sheet,.tag{border-radius:0!important;clip-path:var(--cut)}
 .tag{clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
@@ -79,8 +79,9 @@ input,select{background:#0d0a33;border:2px solid #3b2fa0;color:#fff;font-family:
 .sheet{background:#150f45}
 header img{filter:drop-shadow(0 0 18px rgba(130,70,255,.6))}
 footer .cr{margin-top:6px;font:700 12px Rajdhani,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-footer .crl{width:110px;height:auto;border-radius:0;mix-blend-mode:screen;margin-top:0}
+footer .crl{width:150px;height:auto;border-radius:0;mix-blend-mode:screen;margin-top:0}
 </style>
+
 </head>
 <body>
 <header><div class="top"><button id="shopbtn" onclick="show('login')">🔒 Shop login</button></div><img alt="Pixel Paradise PlayStation Arena" src="logo.png" onclick="logoTap()"></header>
@@ -93,7 +94,7 @@ footer .crl{width:110px;height:auto;border-radius:0;mix-blend-mode:screen;margin
 <section id="book" class="hide"></section>
 <section id="login" class="hide"></section>
 </main>
-<footer><div class="ll"><a onclick="showLegal('privacy')">Privacy Policy</a>·<a onclick="showLegal('terms')">Terms and Conditions</a>·<a onclick="showLegal('refund')">Cancellation and Refund</a>·<a onclick="showLegal('cookies')">Cookie Policy</a>·<a onclick="showLegal('contact')">Contact and Grievance</a></div><div class="cr">Created by</div><img class="crl" src="fexora.jpg" alt="Fexora Digital"></footer>
+<footer><div class="ll"><a onclick="showLegal('privacy')">Privacy Policy</a>·<a onclick="showLegal('terms')">Terms and Conditions</a>·<a onclick="showLegal('refund')">Cancellation and Refund</a>·<a onclick="showLegal('cookies')">Cookie Policy</a>·<a onclick="showLegal('contact')">Contact and Grievance</a></div><div class="cr">Created by</div><img class="crl" src="fexora-digital.jpg" alt="Fexora Digital"></footer>
 <div id="legal" class="modal hide" onclick="if(event.target===this)closeLegal()"><div class="sheet"><button class="x" onclick="closeLegal()">Close ✕</button><div id="lgBody"></div></div></div>
 
 <script>
@@ -105,8 +106,8 @@ const stations=[];
 for(let i=1;i<=6;i++)stations.push({id:'Screen '+i,type:'Screen'});
 stations.push({id:'Car Simulator',type:'Car Simulator'});
 stations.push({id:'Meta Quest VR',type:'Meta Quest VR'});
-const MODES={single:'1 player',multi2:'2 players',multi3:'3 players',multi4:'4 players',car:'Car Simulator',vr:'Meta Quest VR'};
-let P={single:{30:70,60:120},multi2:{30:100,60:180},multi3:{30:150,60:280},multi4:{30:280,60:360},car:{30:120,60:220},vr:{30:140,60:230}};
+const MODES={single:'1 player',multi2:'2 players',multi3:'3 players',multi4:'4 players',gta:'GTA VI',car:'Car Simulator',vr:'Meta Quest VR'};
+let P={single:{30:70,60:120},multi2:{30:100,60:180},multi3:{30:150,60:280},multi4:{30:280,60:360},gta:{30:100,60:200},car:{30:120,60:220},vr:{30:140,60:230}};
 let sessions=[],bookings=[],role=null,shopCred=null,ownerCred=null,view='book',q='';
 const $=id=>document.getElementById(id);
 const today=()=>new Date().toLocaleDateString('en-CA');
@@ -117,8 +118,8 @@ const hm=t=>new Date(t).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}
 const stT=a=>Date.parse(a.start_at),enT=a=>Date.parse(a.end_at);
 const active=id=>sessions.find(s=>s.station===id&&!s.ended_at);
 const isPS=t=>t==='Screen';
-const isCon=t=>t==='PS4'||t==='PS5';
-const modeOf=(type,pl)=>type==='Car Simulator'?'car':type==='Meta Quest VR'?'vr':(pl||'single');
+const isCon=t=>t==='PS4'||t==='PS5'||t==='GTA VI';
+const modeOf=(type,pl)=>type==='GTA VI'?'gta':type==='Car Simulator'?'car':type==='Meta Quest VR'?'vr':(pl||'single');
 const cost=(mode,min)=>Math.floor(min/60)*P[mode][60]+(min%60>=30?P[mode][30]:0);
 const durLabel=m=>m>=60?(m/60)+(m===60?' hour':' hours'):m+' min';
 const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -154,7 +155,7 @@ async function refresh(force){
 
 /* ---------- shop panel ---------- */
 const bk=s=>s.bill_id||s.id;
-const held=()=>sessions.filter(s=>s.ended_at&&s.paid===false);
+const held=()=>sessions.filter(s=>s.ended_at&&s.paid===false&&s.pay_mode!=='Credit');
 function openBills(){const m={};held().forEach(s=>{const k=bk(s);const b=m[k]=m[k]||{k,name:s.name,items:[],total:0};b.items.push(s);b.total+=Number(s.amount)});return Object.values(m)}
 const heldFor=a=>a.bill_id?held().filter(s=>bk(s)===a.bill_id).reduce((t,s)=>t+Number(s.amount),0):0;
 const itemsTxt=l=>l.map(s=>`${s.station}${isCon(s.type)?' ('+s.type+')':''} ${money(s.amount)}`).join(' + ');
@@ -191,16 +192,16 @@ function todayHtml(){
   const d=sessions.filter(s=>s.day===today()).sort((a,b)=>a.id-b.id);
   const sum=m=>d.filter(s=>!m||s.pay_mode===m).reduce((a,s)=>a+Number(s.amount),0);
   const live=d.filter(s=>!s.ended_at).length;
-  const wait=d.filter(s=>s.ended_at&&s.paid===false).reduce((a,s)=>a+Number(s.amount),0);
+  const wait=d.filter(s=>s.ended_at&&s.paid===false&&s.pay_mode!=='Credit').reduce((a,s)=>a+Number(s.amount),0);
   let run=0;
   const steps=d.map((s,i)=>{
     run+=Number(s.amount);
-    const st=!s.ended_at?`▶ Playing now · bill so far ${money(s.amount)}`:s.status==='cancelled'?`✕ Cancelled · charged ${money(s.amount)}`:s.paid===false?`⏳ On hold, not paid yet · ${money(s.amount)}`:`✓ Saved · ${money(s.amount)}`;
-    return `<li><b>Step ${i+1}</b> · ${hm(stT(s))}${s.bill_id&&d.findIndex(x=>x.id===s.bill_id)>=0?' · same customer bill as Step '+(d.findIndex(x=>x.id===s.bill_id)+1):''}<br>${s.station}${isCon(s.type)?' · '+s.type:''} · ${MODES[s.mode]||''} · ${esc(s.name)}<br>${durLabel(s.minutes)} · ${s.pay_mode} · <b>${st}</b><br><span class="muted">Total so far: ${money(run)}</span></li>`;
+    const st=!s.ended_at?`▶ Playing now · bill so far ${money(s.amount)}`:s.status==='cancelled'?`✕ Cancelled · charged ${money(s.amount)}`:s.pay_mode==='Credit'&&s.paid===false?`📒 On credit, not paid yet · ${money(s.amount)}`:s.paid===false?`⏳ On hold, not paid yet · ${money(s.amount)}`:`✓ Saved · ${money(s.amount)}`;
+    return `<li><b>Step ${i+1}</b> · ${hm(stT(s))}${s.bill_id&&d.findIndex(x=>x.id===s.bill_id)>=0?' · same customer bill as Step '+(d.findIndex(x=>x.id===s.bill_id)+1):''}<br>${s.station}${isCon(s.type)?' · '+s.type:''}${s.type==='GTA VI'?'':' · '+(MODES[s.mode]||'')} · ${esc(s.name)}<br>${durLabel(s.minutes)} · ${s.pay_mode} · <b>${st}</b><br><span class="muted">Total so far: ${money(run)}</span></li>`;
   }).join('');
   return `<div class="card" style="margin-bottom:12px"><h3>Today's earnings</h3>
     <div class="time" style="color:var(--neon)">${money(sum())}</div>
-    <div class="muted">Cash ${money(sum('Cash'))} · UPI ${money(sum('UPI'))}<br>${d.length} session${d.length===1?'':'s'} today · ${live} playing now${wait?'<br>⏳ Waiting to be collected: '+money(wait):''}</div>
+    <div class="muted">Cash ${money(sum('Cash'))} · UPI ${money(sum('UPI'))} · Credit ${money(sum('Credit'))}<br>${d.length} session${d.length===1?'':'s'} today · ${live} playing now${wait?'<br>⏳ Waiting to be collected: '+money(wait):''}</div>
     <div class="muted" style="margin-top:6px">✓ Read from the database${checkedAt?' at '+hm(checkedAt):''}</div>
     <button class="b alt" onclick="openToday()">Refresh from database</button></div>
   <div class="card"><h3>Step by step</h3>${steps?'<ol class="steps">'+steps+'</ol>':'<div class="muted">No game saved yet today. Start a session on the Screens tab and it will appear here.</div>'}
@@ -216,29 +217,30 @@ function renderPlay(){
     if(!a)return `<div class="card free"><h3>${st.id}<span class="tag">Free</span></h3>
       <input id="n_${st.id}" placeholder="Customer name">
       ${billSelect(st.id)}
-      ${isPS(st.type)?`<select id="c_${st.id}"><option>PS4</option><option>PS5</option></select>`:''}
+      ${isPS(st.type)?`<select id="c_${st.id}" onchange="conChg('${st.id}')"><option>PS4</option><option>PS5</option>${['Screen 4','Screen 5','Screen 6'].includes(st.id)?'<option>GTA VI</option>':''}</select>`:''}
       ${isPS(st.type)?`<select id="p_${st.id}" onchange="calc('${st.id}')"><option value="single">1 player</option><option value="multi2">2 players</option><option value="multi3">3 players</option><option value="multi4">4 players</option></select>`:''}
       <select id="d_${st.id}" onchange="calc('${st.id}')"><option value="30">30 min</option><option value="60" selected>1 hour</option><option value="90">1.5 hours</option><option value="120">2 hours</option></select>
-      <select id="y_${st.id}"><option value="Cash">Pay by Cash</option><option value="UPI">Pay by UPI</option></select>
+      <select id="y_${st.id}"><option value="Cash">Pay by Cash</option><option value="UPI">Pay by UPI</option><option value="Credit">Credit (pay later)</option></select>
       <div class="muted">Amount: <b id="a_${st.id}"></b></div>
       <button class="b" onclick="startS('${st.id}')">Start session</button></div>`;
     const m=a.mode;
     return `<div class="card busy" id="c_${st.id}"><h3>${st.id}<span class="tag" id="t_${st.id}">Playing</span></h3>
       <div class="time" id="r_${st.id}">--</div>
-      <div class="muted"><b>${esc(a.name)}</b> · ${isCon(a.type)?a.type+' · ':''}${MODES[m]}<br>In ${hm(stT(a))} · ${a.paused_at?'Stopped at '+hm(Date.parse(a.paused_at)):'Out '+hm(enT(a))}<br>Played ${durLabel(a.minutes)}</div>
+      <div class="muted"><b>${esc(a.name)}</b> · ${isCon(a.type)&&a.type!=='GTA VI'?a.type+' · ':''}${MODES[m]}<br>In ${hm(stT(a))} · ${a.paused_at?'Stopped at '+hm(Date.parse(a.paused_at)):'Out '+hm(enT(a))}<br>Played ${durLabel(a.minutes)}</div>
       ${billNote(a)}
-      <select onchange="setPay('${st.id}',this.value)"><option value="Cash" ${a.pay_mode==='UPI'?'':'selected'}>Pay by Cash</option><option value="UPI" ${a.pay_mode==='UPI'?'selected':''}>Pay by UPI</option></select>
+      <select onchange="setPay('${st.id}',this.value)"><option value="Cash" ${a.pay_mode==='UPI'||a.pay_mode==='Credit'?'':'selected'}>Pay by Cash</option><option value="UPI" ${a.pay_mode==='UPI'?'selected':''}>Pay by UPI</option><option value="Credit" ${a.pay_mode==='Credit'?'selected':''}>Credit (pay later)</option></select>
       <button class="b alt" onclick="${a.paused_at?'resume':'pause'}('${st.id}')">${a.paused_at?'▶ Resume time':'⏸ Stop time (power cut)'}</button>
       <div class="muted">Extend ${esc(a.name)}:</div>
       <div class="row"><button class="b alt" onclick="extend('${st.id}',30)">+30 min<br>${money(cost(m,30))}</button><button class="b alt" onclick="extend('${st.id}',60)">+1 hour<br>${money(cost(m,60))}</button></div>
-      <button class="b red" onclick="endS('${st.id}')">End session · collect ${money(a.amount+heldFor(a))}</button>
+      <button class="b red" onclick="endS('${st.id}')">End session · ${a.pay_mode==='Credit'?'put on credit':'collect'} ${money(a.amount+heldFor(a))}</button>
       <button class="b alt" onclick="holdS('${st.id}')">Hold bill: customer will continue later</button>
       <button class="b ghost" onclick="cancelS('${st.id}')">Cancel session</button></div>`}).join('')+'</div>';
   stations.forEach(st=>{if(!active(st.id))calc(st.id)});
   tick();
 }
+function conChg(id){const c=$('c_'+id),p=$('p_'+id);if(p)p.style.display=c&&c.value==='GTA VI'?'none':'';calc(id)}
 function calc(id){
-  const type=stations.find(s=>s.id===id).type;const p=$('p_'+id);
+  const c=$('c_'+id);const type=c?c.value:stations.find(s=>s.id===id).type;const p=$('p_'+id);
   $('a_'+id).textContent=money(cost(modeOf(type,p&&p.value),+$('d_'+id).value));
 }
 async function upd(id,patch){
@@ -249,10 +251,12 @@ async function upd(id,patch){
 }
 async function startS(id){
   const bsel=$('b_'+id);const bill=bsel&&bsel.value?+bsel.value:null;const hb=bill?openBills().find(x=>x.k===bill):null;
-  const name=hb?hb.name:($('n_'+id).value.trim()||'Walk-in');const min=+$('d_'+id).value;
+  const typed=$('n_'+id).value.trim();const pay=$('y_'+id).value;
+  if(pay==='Credit'&&!hb&&!typed){alert('Please type the customer name for a credit game.');return}
+  const name=hb?hb.name:(typed||'Walk-in');const min=+$('d_'+id).value;
   const st=stations.find(s=>s.id===id);const c=$('c_'+id);const type=c?c.value:st.type;
   const p=$('p_'+id);const mode=modeOf(type,p&&p.value);const now=Date.now();
-  const {error}=await sb.from('sessions').insert({station:id,type,mode,name,start_at:new Date(now).toISOString(),end_at:new Date(now+min*60000).toISOString(),minutes:min,amount:cost(mode,min),ext:[],day:today(),pay_mode:$('y_'+id).value,status:'done',...(bill?{bill_id:bill}:{})});
+  const {error}=await sb.from('sessions').insert({station:id,type,mode,name,start_at:new Date(now).toISOString(),end_at:new Date(now+min*60000).toISOString(),minutes:min,amount:cost(mode,min),ext:[],day:today(),pay_mode:pay,status:'done',...(bill?{bill_id:bill}:{}),...(pay==='Credit'?{was_credit:true}:{})});
   if(error){alert('Could not save: '+error.message);return}
   await refresh(true);
 }
@@ -261,7 +265,11 @@ async function extend(id,min){
   const end=(a.paused_at?enT(a):Math.max(enT(a),Date.now()))+min*60000;
   if(await upd(id,{end_at:new Date(end).toISOString(),minutes:a.minutes+min,amount:Number(a.amount)+add,ext:[...(a.ext||[]),{min,add}]})){delete beeped[id];await refresh(true)}
 }
-async function setPay(id,v){await upd(id,{pay_mode:v});await refresh(true)}
+async function setPay(id,v){
+  const a=active(id);
+  if(v==='Credit'&&a.name==='Walk-in'){alert('Credit needs the customer name. End this game and start it again with the name.');await refresh(true);return}
+  await upd(id,{pay_mode:v,...(v==='Credit'?{was_credit:true}:a.pay_mode==='Credit'?{was_credit:false}:{})});await refresh(true);
+}
 async function pause(id){if(await upd(id,{paused_at:new Date().toISOString()}))await refresh(true)}
 async function resume(id){
   const a=active(id);const gap=Date.now()-Date.parse(a.paused_at);
@@ -270,8 +278,9 @@ async function resume(id){
 async function endS(id){
   const a=active(id);
   const mates=a.bill_id?held().filter(s=>bk(s)===a.bill_id).map(s=>s.id):[];
-  if(!await upd(id,{ended_at:new Date().toISOString(),paused_at:null,status:'done'}))return;
-  if(mates.length){const {error}=await sb.from('sessions').update({paid:true,pay_mode:a.pay_mode}).in('id',mates);if(error)alert('Could not save the earlier games on this bill: '+error.message)}
+  const cr=a.pay_mode==='Credit';
+  if(!await upd(id,{ended_at:new Date().toISOString(),paused_at:null,status:'done',...(cr?{paid:false}:{})}))return;
+  if(mates.length){const {error}=await sb.from('sessions').update(cr?{paid:false,pay_mode:'Credit',was_credit:true}:{paid:true,pay_mode:a.pay_mode}).in('id',mates);if(error)alert('Could not save the earlier games on this bill: '+error.message)}
   await refresh(true);
 }
 async function cancelS(id){
@@ -387,10 +396,10 @@ async function changePw(){
   ['pw_o','pw_n','pw_c'].forEach(i=>{$(i).value=''});
   m.textContent='Password changed. Use the new passcode the next time you log in.';
 }
-const OPAGES=['Earnings','Monthly','Daily','Customers','Bookings','Timer & Posters','Change Password'];
+const OPAGES=['Earnings','Monthly','Daily','Customers','Bookings','Timer & Posters','Credit List','Change Password'];
 async function ensureData(force){if(force||loadedDays<400||Date.now()-loadedAt>30000)await loadSessions(400)}
 const sumL=(l,m)=>l.filter(s=>!m||s.pay_mode===m).reduce((a,s)=>a+Number(s.amount),0);
-function group(f){const m={};sessions.forEach(s=>{const k=f(s),x=m[k]=m[k]||{n:0,c:0,u:0};x.n++;if(s.pay_mode==='UPI')x.u+=Number(s.amount);else x.c+=Number(s.amount)});return m}
+function group(f){const m={};sessions.forEach(s=>{const k=f(s),x=m[k]=m[k]||{n:0,c:0,u:0,k:0};x.n++;if(s.pay_mode==='UPI')x.u+=Number(s.amount);else if(s.pay_mode==='Credit')x.k+=Number(s.amount);else x.c+=Number(s.amount)});return m}
 function updSel(){const n=document.querySelectorAll('.rk:checked').length;const b=$('delbtn');if(b)b.textContent='Delete selected ('+n+')'}
 function selAll(on){document.querySelectorAll('.rk:not(:disabled)').forEach(x=>{x.checked=on});updSel()}
 const CK=(v,dis)=>`<td class="ck"><input type="checkbox" class="rk" value="${v}" ${dis?'disabled':''} onchange="updSel()"></td>`;
@@ -405,19 +414,21 @@ function pgEarn(){
     <div class="stat"><span class="muted">Earnings on this date</span><b>${money(sumL(d))}</b></div>
     <div class="stat"><span class="muted">Cash</span><b>${money(sumL(d,'Cash'))}</b></div>
     <div class="stat"><span class="muted">UPI</span><b>${money(sumL(d,'UPI'))}</b></div>
+    <div class="stat"><span class="muted">Credit (not paid)</span><b>${money(sumL(d,'Credit'))}</b></div>
     <div class="stat"><span class="muted">This month</span><b>${money(sumL(mo))}</b></div>
     <div class="stat"><span class="muted">Month Cash</span><b>${money(sumL(mo,'Cash'))}</b></div>
     <div class="stat"><span class="muted">Month UPI</span><b>${money(sumL(mo,'UPI'))}</b></div>
+    <div class="stat"><span class="muted">Month Credit</span><b>${money(sumL(mo,'Credit'))}</b></div>
     <div class="stat"><span class="muted">Sessions</span><b>${d.length}</b></div>
     <div class="stat"><span class="muted">In use now</span><b>${busy}/${stations.length}</b></div></div>
     <div class="card" style="margin-bottom:12px"><h3>Earnings by game (this date)</h3>
-    <p>${['PS4','PS5','Car Simulator','Meta Quest VR'].map(t=>`${t}: <b>${money(by(t))}</b>`).join(' &nbsp; ')}</p></div>
+    <p>${['PS4','PS5','GTA VI','Car Simulator','Meta Quest VR'].map(t=>`${t}: <b>${money(by(t))}</b>`).join(' &nbsp; ')}</p></div>
     <div class="card"><h3>Prices (₹)</h3><div class="wrap"><table><tr><th>Game</th><th>30 min</th><th>1 hour</th></tr>
     ${Object.keys(MODES).map(k=>`<tr><td>${k==='single'?'PS4 / PS5, 1 player':MODES[k]}</td>${[30,60].map(t=>`<td><input type="number" min="0" value="${P[k][t]}" onchange="savePrice('${k}',${t},this.value)"></td>`).join('')}</tr>`).join('')}</table></div></div>`;
 }
 function pgTotals(m,n,kind,title,col){
-  const rows=Object.keys(m).sort().reverse().slice(0,n).map(k=>`<tr>${CK(k)}<td>${k}</td><td>${m[k].n}</td><td>${money(m[k].c)}</td><td>${money(m[k].u)}</td><td><b>${money(m[k].c+m[k].u)}</b></td></tr>`).join('');
-  return `<div class="card"><h3>${title}</h3>${DEL(kind)}<div class="wrap"><table><tr>${CKH}<th>${col}</th><th>Sessions</th><th>Cash</th><th>UPI</th><th>Total</th></tr>${rows||'<tr><td colspan="6" class="muted">No data.</td></tr>'}</table></div></div>`;
+  const rows=Object.keys(m).sort().reverse().slice(0,n).map(k=>`<tr>${CK(k)}<td>${k}</td><td>${m[k].n}</td><td>${money(m[k].c)}</td><td>${money(m[k].u)}</td><td>${money(m[k].k)}</td><td><b>${money(m[k].c+m[k].u+m[k].k)}</b></td></tr>`).join('');
+  return `<div class="card"><h3>${title}</h3>${DEL(kind)}<div class="wrap"><table><tr>${CKH}<th>${col}</th><th>Sessions</th><th>Cash</th><th>UPI</th><th>Credit</th><th>Total</th></tr>${rows||'<tr><td colspan="7" class="muted">No data.</td></tr>'}</table></div></div>`;
 }
 const pgMonth=()=>pgTotals(group(s=>s.day.slice(0,7)),12,'monthly','Monthly earnings','Month');
 const pgDay=()=>pgTotals(group(s=>s.day),31,'daily','Daily earnings (last 31 days)','Date');
@@ -428,6 +439,35 @@ function renderHist(){
   $('hist').innerHTML='<table><tr>'+CKH+'<th>Date</th><th>Customer</th><th>Game</th><th>Amount</th><th>Paid</th></tr>'+(l.map(s=>`<tr>${CK(s.id,!s.ended_at)}<td>${s.day}</td><td>${esc(s.name)}${s.status==='cancelled'?' <span class="muted">(cancelled)</span>':''}${!s.ended_at?' <span class="muted">(playing)</span>':''}</td><td>${s.station}${isCon(s.type)?' · '+s.type:''}</td><td>${money(s.amount)}</td><td>${s.pay_mode}</td></tr>`).join('')||'<tr><td colspan="6" class="muted">No sessions found.</td></tr>')+'</table>';
   updSel();
 }
+let credits=[],collected=[];
+async function loadCredits(){
+  const a=await sb.from('sessions').select('*').eq('pay_mode','Credit').order('id');
+  if(a.data)credits=a.data.filter(s=>s.ended_at);
+  const b=await sb.from('sessions').select('*').eq('was_credit',true).order('id',{ascending:false}).limit(60);
+  if(b.data)collected=b.data.filter(s=>s.pay_mode!=='Credit');
+}
+const gameTxt=s=>`${s.station}${isCon(s.type)?' · '+s.type:''}`;
+function pgCredit(){
+  const tot=credits.reduce((a,s)=>a+Number(s.amount),0),by={};
+  credits.forEach(s=>{const k=s.name.trim().toLowerCase();const x=by[k]=by[k]||{name:s.name,n:0,t:0};x.n++;x.t+=Number(s.amount)});
+  const names=Object.values(by).sort((a,b)=>b.t-a.t);
+  return `<div class="stats"><div class="stat"><span class="muted">Credit not paid</span><b>${money(tot)}</b></div><div class="stat"><span class="muted">Customers</span><b>${names.length}</b></div><div class="stat"><span class="muted">Credit games</span><b>${credits.length}</b></div></div>
+  <div class="card" style="margin-bottom:12px"><h3>Credit list (not paid)</h3><div class="wrap"><table><tr>${CKH}<th>Date</th><th>Customer</th><th>Game</th><th>Amount</th></tr>
+  ${credits.slice().reverse().map(s=>`<tr>${CK(s.id)}<td>${s.day}</td><td>${esc(s.name)}</td><td>${gameTxt(s)}</td><td>${money(s.amount)}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">No credit. Everyone has paid.</td></tr>'}</table></div>
+  <select id="cr_m"><option value="Cash">Collected by Cash</option><option value="UPI">Collected by UPI</option></select>
+  <button class="b" onclick="collectCredit()">Collect selected</button></div>
+  <div class="card" style="margin-bottom:12px"><h3>Total by customer</h3><div class="wrap"><table><tr><th>Customer</th><th>Games</th><th>Owes</th></tr>${names.map(x=>`<tr><td>${esc(x.name)}</td><td>${x.n}</td><td><b>${money(x.t)}</b></td></tr>`).join('')||'<tr><td colspan="3" class="muted">Nobody owes anything.</td></tr>'}</table></div></div>
+  <div class="card"><h3>Recently collected credit</h3><div class="wrap"><table><tr><th>Date</th><th>Customer</th><th>Game</th><th>Amount</th><th>Paid by</th><th>Collected on</th></tr>${collected.map(s=>`<tr><td>${s.day}</td><td>${esc(s.name)}</td><td>${gameTxt(s)}</td><td>${money(s.amount)}</td><td>${s.pay_mode}</td><td>${s.settled_at?s.settled_at.slice(0,10):''}</td></tr>`).join('')||'<tr><td colspan="6" class="muted">None yet.</td></tr>'}</table></div></div>`;
+}
+async function collectCredit(){
+  const ids=[...document.querySelectorAll('.rk:checked')].map(x=>+x.value);
+  if(!ids.length){alert('Select at least one credit row first.');return}
+  const mode=$('cr_m').value,tot=credits.filter(s=>ids.includes(s.id)).reduce((a,s)=>a+Number(s.amount),0);
+  if(!confirm('Mark '+ids.length+' credit game(s) as paid by '+mode+' ('+money(tot)+')?'))return;
+  const {error}=await sb.from('sessions').update({pay_mode:mode,paid:true,settled_at:new Date().toISOString()}).in('id',ids);
+  if(error){alert('Could not save: '+error.message);return}
+  await ensureData(true);await renderOwner();
+}
 function pgBook(){
   return `<div class="card"><h3>Online bookings</h3>${DEL('bookings')}<div class="wrap"><table><tr>${CKH}<th>Date</th><th>Time</th><th>Game</th><th>Customer</th><th>Status</th></tr>
     ${bookings.map(b=>`<tr>${CK(b.id)}<td>${b.date}</td><td>${b.slot}:00</td><td>${b.type}${isCon(b.type)&&b.players&&b.players!=='single'?' ('+MODES[b.players]+')':''}</td><td>${esc(b.name)}<br><span class="muted">${esc(b.phone)}</span></td><td>${b.status}<br>${b.status==='pending'?`<button class="slot" onclick="setStatus(${b.id},'confirmed')">Confirm</button> `:''}${b.status!=='cancelled'?`<button class="slot" onclick="setStatus(${b.id},'cancelled')">Cancel</button>`:''}${b.status!=='pending'?waBtn(b):''}</td></tr>`).join('')||'<tr><td colspan="6" class="muted">No bookings yet.</td></tr>'}</table></div></div>`;
@@ -436,9 +476,10 @@ async function renderOwner(){
   await ensureData();
   if(opage===5)await loadBookings();
   if(opage===6)await loadAnn();
+  if(opage===7)await loadCredits();
   if(view!=='owner')return;
   const nav='<div class="subnav">'+OPAGES.map((p,i)=>`<button class="slot ${opage===i+1?'sel':''}" onclick="opage=${i+1};renderOwner()">${i+1}. ${p}</button>`).join('')+'</div>';
-  $('owner').innerHTML=nav+[pgEarn,pgMonth,pgDay,pgCust,pgBook,pgAnn,pgPass][opage-1]();
+  $('owner').innerHTML=nav+[pgEarn,pgMonth,pgDay,pgCust,pgBook,pgAnn,pgCredit,pgPass][opage-1]();
   if(opage===4)renderHist();
 }
 async function delSel(kind){
@@ -630,5 +671,6 @@ window.addEventListener('hashchange',()=>{if(location.hash==='#shop'&&!role)show
   show(location.hash==='#shop'?'login':'book');
 })();
 </script>
+
 </body>
 </html>
