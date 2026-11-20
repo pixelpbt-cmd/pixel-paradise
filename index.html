@@ -94,7 +94,7 @@ footer .crl{width:150px;height:auto;border-radius:0;mix-blend-mode:screen;margin
 <section id="book" class="hide"></section>
 <section id="login" class="hide"></section>
 </main>
-<footer><div class="ll"><a onclick="showLegal('privacy')">Privacy Policy</a>·<a onclick="showLegal('terms')">Terms and Conditions</a>·<a onclick="showLegal('refund')">Cancellation and Refund</a>·<a onclick="showLegal('cookies')">Cookie Policy</a>·<a onclick="showLegal('contact')">Contact and Grievance</a></div><div class="cr">Created by</div><img class="crl" src="fexora.jpg" alt="Fexora Digital"></footer>
+<footer><div class="ll"><a onclick="showLegal('privacy')">Privacy Policy</a>·<a onclick="showLegal('terms')">Terms and Conditions</a>·<a onclick="showLegal('refund')">Cancellation and Refund</a>·<a onclick="showLegal('cookies')">Cookie Policy</a>·<a onclick="showLegal('contact')">Contact and Grievance</a></div><div class="cr">Created by</div><img class="crl" src="fexora-digital.jpg" alt="Fexora Digital"></footer>
 <div id="legal" class="modal hide" onclick="if(event.target===this)closeLegal()"><div class="sheet"><button class="x" onclick="closeLegal()">Close ✕</button><div id="lgBody"></div></div></div>
 
 <script>
@@ -124,8 +124,14 @@ const cost=(mode,min)=>Math.floor(min/60)*P[mode][60]+(min%60>=30?P[mode][30]:0)
 const durLabel=m=>m>=60?(m/60)+(m===60?' hour':' hours'):m+' min';
 const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const errMsg=e=>/invalid login/i.test(e.message)?'Wrong ID or passcode.':'Error: '+e.message;
-let beeped={};
-function beep(){try{const a=new (window.AudioContext||window.webkitAudioContext)();const o=a.createOscillator();o.connect(a.destination);o.frequency.value=880;o.start();o.stop(a.currentTime+.4)}catch(e){}}
+let beeped={},AC=null,soundOn=true,BASE_TITLE=document.title;
+function audio(){try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();return AC}catch(e){return null}}
+document.addEventListener('click',audio,true);document.addEventListener('keydown',audio,true);
+function beep(){
+  if(!soundOn)return;const a=audio();if(!a)return;
+  [[0,880],[.35,880],[.7,1175]].forEach(([t,f])=>{const o=a.createOscillator(),g=a.createGain();o.type='square';o.frequency.value=f;g.gain.value=.3;o.connect(g);g.connect(a.destination);o.start(a.currentTime+t);o.stop(a.currentTime+t+.25)});
+}
+function toggleSound(){soundOn=!soundOn;if(soundOn)beep();const b=$('sndbtn');if(b)b.textContent=soundOn?'Sound ON (tap to test)':'Sound OFF'}
 
 /* ---------- data ---------- */
 async function loadPrices(){const {data}=await sb.from('prices').select('*');if(data)data.forEach(r=>{P[r.mode]={30:r.p30,60:r.p60}})}
@@ -191,7 +197,7 @@ let STAFF='';try{STAFF=localStorage.getItem('pp_staff')||''}catch(e){}
 function staffNames(){try{return JSON.parse(localStorage.getItem('pp_staff_list')||'[]')}catch(e){return[]}}
 function setStaff(v){STAFF=String(v).trim();try{localStorage.setItem('pp_staff',STAFF);if(STAFF){const l=staffNames().filter(x=>x!==STAFF);l.unshift(STAFF);localStorage.setItem('pp_staff_list',JSON.stringify(l.slice(0,6)))}}catch(e){}}
 function needStaff(){if(STAFF)return true;alert('Type your name in "Staff on duty" at the top first. It is saved with the money you collect.');return false}
-const staffBar=()=>`<div class="card" style="margin-bottom:10px;padding:8px"><input id="staffbox" list="stl" placeholder="Staff on duty: type your name" value="${esc(STAFF)}" onchange="setStaff(this.value)" autocomplete="off"><datalist id="stl">${staffNames().map(n=>`<option value="${esc(n)}">`).join('')}</datalist></div>`;
+const staffBar=()=>`<div class="card" style="margin-bottom:10px;padding:8px"><input id="staffbox" list="stl" placeholder="Staff on duty: type your name" value="${esc(STAFF)}" onchange="setStaff(this.value)" autocomplete="off"><datalist id="stl">${staffNames().map(n=>`<option value="${esc(n)}">`).join('')}</datalist><button class="slot" id="sndbtn" onclick="toggleSound()" style="margin-top:6px">${soundOn?'Sound ON (tap to test)':'Sound OFF'}</button></div>`;
 function payState(s){
   const due=dueOf(s),pa=paidAmt(s);
   if(s.pay_mode==='Credit'&&due>0)return {k:'cr',t:'📒 ON CREDIT · '+money(due)};
@@ -338,14 +344,16 @@ async function cancelS(id){
   if(await upd(id,{ended_at:new Date().toISOString(),paused_at:null,status:'cancelled',amount:amt}))await refresh(true);
 }
 function tick(){
+  const up=[];
   stations.forEach(st=>{
     const a=active(st.id);if(!a)return;
     const left=enT(a)-(a.paused_at?Date.parse(a.paused_at):Date.now());const r=$('r_'+st.id),c=$('c_'+st.id),t=$('t_'+st.id);
     if(!r)return;
     if(a.paused_at){r.textContent=fmt(left);c.className='card paused';t.textContent='Paused';return}
-    if(left<=0){r.textContent='TIME UP';c.className='card up';t.textContent='Time up';if(!beeped[st.id]){beeped[st.id]=1;beep()}}
+    if(left<=0){r.textContent='TIME UP';c.className='card up';t.textContent='Time up';{const b=beeped[st.id]||(beeped[st.id]={t:0,n:0});if(b.n<12&&Date.now()-b.t>6000){b.t=Date.now();b.n++;beep()}up.push(st.id)}}
     else{r.textContent=fmt(left);c.className='card busy';t.textContent='Playing'}
   });
+  document.title=up.length?'TIME UP: '+up.join(', '):BASE_TITLE;
 }
 setInterval(tick,1000);
 setInterval(()=>{if(role&&view==='shop')refresh()},20000);
@@ -409,6 +417,20 @@ async function uploadPoster(){
 async function togPoster(id,v){await sb.from('posters').update({active:v}).eq('id',id);await loadAnn();renderOwner()}
 async function delPoster(id){if(!confirm('Delete this poster?'))return;await sb.from('posters').delete().eq('id',id);await loadAnn();renderOwner()}
 let opage=1;
+let HID={monthly:new Set(),daily:new Set(),customers:new Set()};
+async function loadHidden(){
+  const {data}=await sb.from('hidden_items').select('page,key').limit(5000);
+  HID={monthly:new Set(),daily:new Set(),customers:new Set()};
+  (data||[]).forEach(r=>{if(HID[r.page])HID[r.page].add(String(r.key))});
+}
+const hideKeys=(m,p)=>{const o={};Object.keys(m).forEach(k=>{if(!HID[p].has(String(k)))o[k]=m[k]});return o};
+const RESTORE=p=>HID[p]&&HID[p].size?`<button class="slot" style="margin-top:8px" onclick="restoreHidden('${p}')">Show ${HID[p].size} hidden again</button>`:'';
+async function restoreHidden(p){
+  if(!confirm('Show the '+HID[p].size+' hidden item(s) on this page again?'))return;
+  const {error}=await sb.from('hidden_items').delete().eq('page',p);
+  if(error){alert('Could not restore: '+error.message);return}
+  await loadHidden();await renderOwner();
+}
 const pwin=(id,ph)=>`<input id="${id}" type="password" inputmode="numeric" maxlength="6" placeholder="${ph}" autocomplete="off" oninput="this.value=this.value.replace(/\\D/g,'')">`;
 function pgPass(){
   return `<div class="card"><h3>Change password</h3>
@@ -483,14 +505,14 @@ function pgEarn(){
 }
 function pgTotals(m,n,kind,title,col){
   const rows=Object.keys(m).sort().reverse().slice(0,n).map(k=>`<tr>${CK(k)}<td>${k}</td><td>${m[k].n}</td><td>${money(m[k].c)}</td><td>${money(m[k].u)}</td><td>${money(m[k].k)}</td><td><b>${money(m[k].c+m[k].u+m[k].k)}</b></td></tr>`).join('');
-  return `<div class="card"><h3>${title}</h3>${DEL(kind)}<div class="wrap"><table><tr>${CKH}<th>${col}</th><th>Sessions</th><th>Cash</th><th>UPI</th><th>Credit</th><th>Total</th></tr>${rows||'<tr><td colspan="7" class="muted">No data.</td></tr>'}</table></div></div>`;
+  return `<div class="card"><h3>${title}</h3>${DEL(kind)}${RESTORE(kind)}<div class="wrap"><table><tr>${CKH}<th>${col}</th><th>Sessions</th><th>Cash</th><th>UPI</th><th>Credit</th><th>Total</th></tr>${rows||'<tr><td colspan="7" class="muted">No data.</td></tr>'}</table></div></div>`;
 }
-const pgMonth=()=>pgTotals(group(s=>s.day.slice(0,7)),12,'monthly','Monthly earnings','Month');
-const pgDay=()=>pgTotals(group(s=>s.day),31,'daily','Daily earnings (last 31 days)','Date');
-function pgCust(){return `<div class="card"><h3>Customer history</h3><input placeholder="Search customer name" value="${esc(q)}" oninput="q=this.value;renderHist()">${DEL('customers')}<div class="wrap" id="hist"></div></div>`}
+const pgMonth=()=>pgTotals(hideKeys(group(s=>s.day.slice(0,7)),'monthly'),12,'monthly','Monthly earnings','Month');
+const pgDay=()=>pgTotals(hideKeys(group(s=>s.day),'daily'),31,'daily','Daily earnings (last 31 days)','Date');
+function pgCust(){return `<div class="card"><h3>Customer history</h3><input placeholder="Search customer name" value="${esc(q)}" oninput="q=this.value;renderHist()">${DEL('customers')}${RESTORE('customers')}<div class="wrap" id="hist"></div></div>`}
 function renderHist(){
   const t=q.trim().toLowerCase();
-  const l=sessions.filter(s=>!t||s.name.toLowerCase().includes(t)).slice().reverse().slice(0,200);
+  const l=sessions.filter(s=>!HID.customers.has(String(s.id))&&(!t||s.name.toLowerCase().includes(t))).slice().reverse().slice(0,200);
   $('hist').innerHTML='<table><tr>'+CKH+'<th>Date</th><th>Customer</th><th>Game</th><th>Amount</th><th>Paid</th></tr>'+(l.map(s=>`<tr>${CK(s.id,!s.ended_at)}<td>${s.day}</td><td>${esc(s.name)}${s.status==='cancelled'?' <span class="muted">(cancelled)</span>':''}${!s.ended_at?' <span class="muted">(playing)</span>':''}</td><td>${s.station}${isCon(s.type)?' · '+s.type:''}</td><td>${money(s.amount)}</td><td>${s.pay_mode}</td></tr>`).join('')||'<tr><td colspan="6" class="muted">No sessions found.</td></tr>')+'</table>';
   updSel();
 }
@@ -532,6 +554,7 @@ function pgBook(){
 }
 async function renderOwner(){
   await ensureData();
+  if(opage>=2&&opage<=4)await loadHidden();
   if(opage===5)await loadBookings();
   if(opage===6)await loadAnn();
   if(opage===7)await loadCredits();
@@ -543,6 +566,13 @@ async function renderOwner(){
 async function delSel(kind){
   const v=[...document.querySelectorAll('.rk:checked')].map(x=>x.value);
   if(!v.length){alert('Tick at least one box first.');return}
+  if(kind!=='bookings'){
+    const what={customers:'customer row(s)',daily:'day(s)',monthly:'month(s)'}[kind];
+    if(!confirm('Remove '+v.length+' selected '+what+' from THIS page only?\nYour other pages and totals will not change.'))return;
+    const rows=v.filter(k=>!HID[kind].has(String(k))).map(k=>({page:kind,key:String(k)}));
+    if(rows.length){const {error}=await sb.from('hidden_items').insert(rows);if(error){alert('Could not remove. Run hidden_items.sql in Supabase first. ('+error.message+')');return}}
+    await loadHidden();await renderOwner();return;
+  }
   const tbl=kind==='bookings'?'bookings':'sessions';
   let ids;
   if(kind==='bookings'||kind==='customers')ids=v.map(Number);
