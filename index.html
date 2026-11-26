@@ -559,7 +559,7 @@ async function renderOwner(){
   if(opage===7)await loadCredits();
   if(view!=='owner')return;
   const nav='<div class="subnav">'+OPAGES.map((p,i)=>`<button class="slot ${opage===i+1?'sel':''}" onclick="opage=${i+1};renderOwner()">${i+1}. ${p}</button>`).join('')+'</div>';
-  $('owner').innerHTML=nav+'<div class="muted" style="font-size:11px;margin:-4px 0 8px">Version: page-only delete (20 Nov)</div>'+[pgEarn,pgMonth,pgDay,pgCust,pgBook,pgAnn,pgCredit,pgPass][opage-1]();
+  $('owner').innerHTML=nav+'<div class="muted" style="font-size:11px;margin:-4px 0 8px">Version: direct owner login (26 Nov)</div>'+[pgEarn,pgMonth,pgDay,pgCust,pgBook,pgAnn,pgCredit,pgPass][opage-1]();
   if(opage===4)renderHist();
 }
 async function delSel(kind){
@@ -690,16 +690,28 @@ function show(v){
 }
 async function go(v){
   if(v==='shop')spage='play';
-  if(role==='owner'&&v!=='owner'){await leaveOwner();if(!role)return}
+  if(role==='owner'&&v!=='owner'&&!ownerDirect){await leaveOwner();if(!role)return}
   show(v);
 }
 const PASSIN=`<input id="lp" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="6-digit passcode" autocomplete="off" oninput="this.value=this.value.replace(/\\D/g,'')"`;
+let lmode='shop',ownerDirect=false;
 function renderLogin(){
-  $('login').innerHTML=`<div class="card"><h2 style="font-size:20px;margin-bottom:8px">Shop login</h2>
-  <select id="le"><option value="">Select shop</option><option value="pixelparadise">Pixel Paradise</option></select>
-  ${PASSIN} onkeydown="if(event.key==='Enter')doLogin()">
-  <button class="b" onclick="doLogin()">Login</button><div id="lm" class="muted" style="margin-top:8px"></div>
+  const shop=lmode==='shop';
+  $('login').innerHTML=`<div class="card"><div class="stab"><button class="${shop?'on':''}" onclick="lmode='shop';renderLogin()">Shop login</button><button class="${shop?'':'on'}" onclick="lmode='owner';renderLogin()">Owner login</button></div>
+  ${shop?`<select id="le"><option value="">Select shop</option><option value="pixelparadise">Pixel Paradise</option></select>`:`<input id="le" type="text" placeholder="Owner name" autocomplete="off" autocapitalize="none">`}
+  ${PASSIN} onkeydown="if(event.key==='Enter')${shop?'doLogin()':'doOwnerDirect()'}">
+  <button class="b" onclick="${shop?'doLogin()':'doOwnerDirect()'}">${shop?'Login':'Open Owner panel'}</button><div id="lm" class="muted" style="margin-top:8px"></div>
   <button class="b ghost2" onclick="show('book')">Back to booking</button></div>`;
+}
+async function doOwnerDirect(){
+  const name=$('le').value.trim().toLowerCase().replace(/[^a-z0-9]/g,''),code=$('lp').value;
+  if(!name||code.length!==6){$('lm').textContent='Enter your name and the 6 digit passcode.';return}
+  const {error}=await sb.auth.signInWithPassword({email:name+LOGIN_DOMAIN,password:code});
+  if(error){$('lm').textContent='Wrong name or passcode.';return}
+  await setRole();
+  if(role!=='owner'){if(role)await sb.auth.signOut();role=null;$('lm').textContent='Wrong name or passcode.';return}
+  ownerDirect=true;ownerCred={email:name+LOGIN_DOMAIN,password:code};
+  await loadPrices();await loadSessions();listen();show('owner');
 }
 function renderHome(){
   $('login').innerHTML=`<div class="card"><h2 style="font-size:20px;margin-bottom:12px">Welcome to Pixel Paradise</h2>
@@ -708,7 +720,7 @@ function renderHome(){
 }
 function renderOwnerLogin(){
   $('login').innerHTML=`<div class="card"><h2 style="font-size:20px;margin-bottom:8px">Owner login</h2>
-  <select id="le"><option value="">Select owner</option>${OWNERS.map(o=>`<option value="${o[0]}">${o[1]} (Owner)</option>`).join('')}</select>
+  <input id="le" type="text" placeholder="Owner name" autocomplete="off" autocapitalize="none">
   ${PASSIN} onkeydown="if(event.key==='Enter')doOwnerLogin()">
   <button class="b" onclick="doOwnerLogin()">Open Owner panel</button><div id="lm" class="muted" style="margin-top:8px"></div>
   <button class="b ghost2" onclick="go('home')">Back</button></div>`;
@@ -730,8 +742,8 @@ async function doLogin(){
   await loadPrices();await loadSessions();listen();show('home');
 }
 async function doOwnerLogin(){
-  const name=$('le').value,code=$('lp').value;
-  if(!name||code.length!==6){$('lm').textContent='Select the owner and enter the 6 digit passcode.';return}
+  const name=$('le').value.trim().toLowerCase().replace(/[^a-z0-9]/g,''),code=$('lp').value;
+  if(!name||code.length!==6){$('lm').textContent='Enter your name and the 6 digit passcode.';return}
   const {error}=await sb.auth.signInWithPassword({email:name+LOGIN_DOMAIN,password:code});
   if(error){$('lm').textContent=errMsg(error);return}
   await setRole();
@@ -745,8 +757,8 @@ async function leaveOwner(){
   await logout();
 }
 async function listen(){await sb.removeAllChannels();sb.channel('sess').on('postgres_changes',{event:'*',schema:'public',table:'sessions'},()=>refresh()).subscribe()}
-async function logout(){await sb.removeAllChannels();await sb.auth.signOut();role=null;shopCred=null;ownerCred=null;sessions=[];show('book')}
-window.addEventListener('hashchange',()=>{if(location.hash==='#shop'&&!role)show('login')});
+async function logout(){await sb.removeAllChannels();await sb.auth.signOut();role=null;shopCred=null;ownerCred=null;ownerDirect=false;sessions=[];show('book')}
+window.addEventListener('hashchange',()=>{if(location.hash==='#owner'&&!role){lmode='owner';show('login')}else if(location.hash==='#shop'&&!role){lmode='shop';show('login')}});
 (async function init(){
   if(String(SUPABASE_URL).startsWith('PASTE')||String(SUPABASE_KEY).startsWith('PASTE'))$('cfg').classList.remove('hide');
   try{
